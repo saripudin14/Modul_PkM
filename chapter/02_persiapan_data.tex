@@ -1,4 +1,4 @@
-\chapter{Persiapan dan Eksplorasi Data}
+﻿\chapter{Persiapan dan Eksplorasi Data}
 
 Bab ini akan memandu Anda dalam mempersiapkan seluruh kebutuhan data yang akan digunakan pada praktikum ini. Terdapat tiga tahapan utama yang akan dilalui, yaitu pengambilan data (\textit{data loading}) dari KaggleHub, persiapan \textit{environment} dengan mengimpor seluruh \textit{library} yang dibutuhkan, serta eksplorasi data awal (\textit{Exploratory Data Analysis} / EDA) untuk memahami karakteristik dataset yang akan digunakan.
 
@@ -31,10 +31,13 @@ Ketika kode di atas dijalankan, KaggleHub akan mengunduh dataset dan menyimpanny
 
 Output yang akan tampil setelah kode dijalankan adalah sebagai berikut:
 
-\begin{lstlisting}[language={}, caption=Output pengunduhan dataset]
+\begin{outputcode}[H]
+\begin{lstlisting}[language={}]
 Dataset berhasil diunduh.
 Lokasi dataset: /kaggle/input/new-plant-diseases-dataset
 \end{lstlisting}
+\caption{Output pengunduhan dataset}
+\end{outputcode}
 
 \begin{tcolorbox}[title=Catatan Penting, colback=blue!5!white, colframe=blue!70!black]
 Pastikan Anda telah terhubung ke internet saat menjalankan kode di atas. Dataset yang diunduh memiliki ukuran yang cukup besar, sehingga proses pengunduhan mungkin memerlukan waktu beberapa saat tergantung pada kecepatan koneksi internet Anda.
@@ -67,7 +70,8 @@ for item in os.listdir(dataset_path):
 
 Setelah kode di atas dijalankan, akan terlihat struktur folder dataset sebagai berikut:
 
-\begin{lstlisting}[language={}, caption=Output struktur folder dataset]
+\begin{outputcode}[H]
+\begin{lstlisting}[language={}]
 Lokasi dataset:
 /kaggle/input/new-plant-diseases-dataset
 
@@ -76,6 +80,8 @@ Isi folder utama dataset:
 [Folder] new plant diseases dataset(augmented)
 [Folder] test
 \end{lstlisting}
+\caption{Output struktur folder dataset}
+\end{outputcode}
 
 Dari output tersebut, kita dapat melihat bahwa dataset terdiri dari tiga folder utama. Dua di antaranya merupakan folder yang berisi data \textit{training} dan \textit{validation} yang sudah di-\textit{augmentasi}, serta satu folder \texttt{test} yang berisi data pengujian. Pada praktikum ini, kita akan menggunakan folder yang berisi data \textit{augmented} untuk melatih dan mengevaluasi model.
 
@@ -119,9 +125,12 @@ print("Semua library berhasil diimport.")
 
 Setelah kode di atas dijalankan, akan muncul output berikut:
 
-\begin{lstlisting}[language={}, caption=Output impor library]
+\begin{outputcode}[H]
+\begin{lstlisting}[language={}]
 Semua library berhasil diimport.
 \end{lstlisting}
+\caption{Output impor library}
+\end{outputcode}
 
 Penjelasan masing-masing \textit{library} yang diimpor:
 
@@ -153,9 +162,12 @@ print("Library torchsummary berhasil diinstall.")
 
 Output yang akan tampil:
 
-\begin{lstlisting}[language={}, caption=Output instalasi torchsummary]
+\begin{outputcode}[H]
+\begin{lstlisting}[language={}]
 Library torchsummary berhasil diinstall.
 \end{lstlisting}
+\caption{Output instalasi torchsummary}
+\end{outputcode}
 
 \begin{tcolorbox}[title=Catatan Penting, colback=blue!5!white, colframe=blue!70!black]
 Perintah \texttt{!pip install} hanya perlu dijalankan satu kali pada awal sesi Google Colab. Jika \textit{runtime} di-reset, Anda perlu menginstal ulang \textit{library} yang tidak termasuk dalam bawaan Colab.
@@ -201,7 +213,8 @@ print("Jumlah kelas dataset :", len(diseases))
 
 Output yang akan tampil:
 
-\begin{lstlisting}[language={}, caption=Output lokasi folder dataset]
+\begin{outputcode}[H]
+\begin{lstlisting}[language={}]
 Folder dataset utama : /kaggle/input/new-plant-diseases-dataset/New Plant
                         Diseases Dataset(Augmented)/New Plant Diseases
                         Dataset(Augmented)
@@ -213,6 +226,8 @@ Folder validation    : /kaggle/input/new-plant-diseases-dataset/New Plant
                         Dataset(Augmented)/valid
 Jumlah kelas dataset : 38
 \end{lstlisting}
+\caption{Output lokasi folder dataset}
+\end{outputcode}
 
 Dari output di atas, kita dapat melihat bahwa dataset utama memiliki total 38 kelas penyakit tanaman. Namun, untuk praktikum ini kita hanya akan fokus pada 5 kelas daun tomat.
 
@@ -244,9 +259,12 @@ print("Total gambar dalam dataset:", total_images)
 
 Setelah kode dijalankan, akan tampil output berikut:
 
-\begin{lstlisting}[language={}, caption=Output total gambar dalam dataset]
+\begin{outputcode}[H]
+\begin{lstlisting}[language={}]
 Total gambar dalam dataset: 175767
 \end{lstlisting}
+\caption{Output total gambar dalam dataset}
+\end{outputcode}
 
 Kode di atas akan menelusuri seluruh folder dan subfolder dalam dataset, kemudian menghitung jumlah file gambar dengan ekstensi \texttt{.jpg}, \texttt{.jpeg}, dan \texttt{.png}. Hasilnya menampilkan total seluruh gambar yang tersedia di dalam dataset, yaitu sebanyak \textbf{175.767} gambar.
 
@@ -269,9 +287,6 @@ for root, dirs, files in os.walk(dataset_path):
         if file.lower().endswith(image_extensions):
             image_paths.append(os.path.join(root, file))
 
-# Menampilkan jumlah gambar yang ditemukan
-print("Jumlah gambar ditemukan:", len(image_paths))
-
 # Mengecek apakah ada gambar yang ditemukan
 if len(image_paths) == 0:
     print("Tidak ada gambar yang ditemukan. Periksa kembali lokasi dataset.")
@@ -282,11 +297,6 @@ else:
     # Membuka gambar
     img = Image.open(sample_image_path).convert("RGB")
 
-    # Menampilkan informasi gambar
-    print("Contoh path gambar:")
-    print(sample_image_path)
-    print("Ukuran gambar:", img.size)
-
     # Menampilkan gambar
     plt.figure(figsize=(5, 5))
     plt.imshow(img)
@@ -295,29 +305,439 @@ else:
     plt.show()
 \end{lstlisting}
 
-Output yang akan tampil setelah kode dijalankan:
-
-\begin{lstlisting}[language={}, caption=Output teks contoh gambar dataset]
-Jumlah gambar ditemukan: 175767
-Contoh path gambar:
-/kaggle/input/new-plant-diseases-dataset/New Plant
-Diseases Dataset(Augmented)/New Plant Diseases
-Dataset(Augmented)/valid/Tomato___Late_blight/1e5ba644-
-efeb-4bd3-b878-a0606cf8a992___RS_Late.B 6272_flipLR.JPG
-Ukuran gambar: (256, 256)
-\end{lstlisting}
-
-Selain informasi di atas, kode tersebut juga akan menampilkan visualisasi gambar secara langsung. Gambar \ref{fig:contoh_dataset} berikut adalah contoh gambar yang dihasilkan:
+Output yang akan tampil setelah kode dijalankan adalah visualisasi gambar sebagai berikut (lihat Gambar \ref{fig:contoh_dataset}):
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.6\textwidth]{gambar/2.3.png}
+\includegraphics[width=1.0\textwidth]{gambar/2.3.png}
 \caption{Contoh gambar daun dari dataset}
 \label{fig:contoh_dataset}
 \end{figure}
 
-Dari output di atas, kita dapat melihat bahwa setiap gambar dalam dataset memiliki ukuran \textbf{256\texttimes256} piksel. Gambar contoh yang ditampilkan berasal dari kelas \texttt{Tomato\_\_\_Late\_blight} (penyakit hawar daun tomat). Selain informasi path dan ukuran, kode di atas juga akan menampilkan visualisasi gambar secara langsung di \textit{notebook}.
+Dari output di atas, kita dapat melihat bahwa setiap gambar dalam dataset memiliki ukuran \textbf{256\texttimes256} piksel. Gambar contoh yang ditampilkan berasal dari kelas \texttt{Tomato\_\_\_\allowbreak Late\_blight} (penyakit hawar daun tomat).
 
 \begin{tcolorbox}[title=Catatan Penting, colback=blue!5!white, colframe=blue!70!black]
 Pada lingkungan Google Colab, perintah \texttt{plt.show()} akan menampilkan gambar langsung di bawah sel kode. Jika Anda menjalankan kode di \textit{terminal} biasa, pastikan \textit{backend} matplotlib telah dikonfigurasi dengan benar untuk menampilkan grafik.
 \end{tcolorbox}
+
+\subsection{Identifikasi Kelas Dataset dan Memisahkan Kelas Penyakit dan Kelas Sehat}
+
+Selanjutnya, kita akan memetakan variasi data dengan memisahkan seluruh kelas menjadi dua kelompok: tanaman sehat dan berpenyakit. Kelas yang mengandung kata \texttt{healthy} akan dikategorikan sebagai tanaman sehat, sedangkan sisanya otomatis masuk ke daftar kelas penyakit. Langkah ini penting untuk mengetahui seberapa kompleks variasi dataset yang kita miliki.
+
+\begin{lstlisting}[language=Python, caption=Identifikasi dan filter kelas dataset]
+
+# 1. Memisahkan kelas penyakit dan kelas sehat
+
+diseases_only = [
+    class_name for class_name in diseases
+    if "healthy" not in class_name.lower()
+]
+
+healthy_classes = [
+    class_name for class_name in diseases
+    if "healthy" in class_name.lower()
+]
+
+# 2. Mengambil daftar jenis tanaman dari nama kelas
+
+def get_plant_name(class_name):
+    """
+    Fungsi untuk mengambil nama tanaman dari nama kelas dataset.
+
+    Contoh:
+    Tomato___Early_blight -> Tomato
+    Apple___Black_rot -> Apple
+    """
+    if "___" in class_name:
+        return class_name.split("___")[0]
+    return class_name
+
+plant_names = sorted(list(set([
+    get_plant_name(class_name) for class_name in diseases
+])))
+
+# 3. Menampilkan ringkasan jumlah kelas
+
+print("Total semua kelas      :", len(diseases))
+print("Total kelas penyakit   :", len(diseases_only))
+print("Total kelas sehat      :", len(healthy_classes))
+print("Total jenis tanaman    :", len(plant_names))
+
+# 4. Membuat tabel daftar tanaman
+import pandas as pd
+
+df_plants = pd.DataFrame({
+    "No": range(1, len(plant_names) + 1),
+    "Jenis Tanaman": plant_names
+})
+
+print("\nTabel Daftar Tanaman:")
+display(df_plants)
+
+# 5. Membuat tabel kelas penyakit
+
+df_only_diseases = pd.DataFrame({
+    "No": range(1, len(diseases_only) + 1),
+    "Kelas Penyakit": diseases_only
+})
+
+print("\nTabel Kelas Penyakit:")
+display(df_only_diseases)
+
+# 6. Membuat tabel kelas sehat
+
+df_healthy_classes = pd.DataFrame({
+    "No": range(1, len(healthy_classes) + 1),
+    "Kelas Sehat": healthy_classes
+})
+
+print("\nTabel Kelas Sehat:")
+display(df_healthy_classes)
+\end{lstlisting}
+
+Output teks yang akan tampil setelah kode dijalankan:
+
+\begin{outputcode}[H]
+\begin{lstlisting}[language={}]
+Total semua kelas      : 38
+Total kelas penyakit   : 26
+Total kelas sehat      : 12
+Total jenis tanaman    : 14
+\end{lstlisting}
+\caption{Output ringkasan jumlah kelas}
+\end{outputcode}
+
+Selain output teks di atas, kode tersebut juga akan menampilkan tiga buah tabel secara interaktif. Berikut ini adalah tabel-tabel yang dihasilkan:
+
+\begin{table}[H]
+\centering
+\small
+\begin{minipage}[t]{0.45\textwidth}
+\centering
+\caption{Tabel Daftar Tanaman}
+\begin{tabular}{|c|p{4cm}|}
+\hline
+\textbf{No} & \textbf{Jenis Tanaman} \\ \hline
+1 & Apple \\ \hline
+2 & Blueberry \\ \hline
+3 & Cherry\_(including\_sour) \\ \hline
+4 & Corn\_(maize) \\ \hline
+5 & Grape \\ \hline
+6 & Orange \\ \hline
+7 & Peach \\ \hline
+8 & Pepper,\_bell \\ \hline
+9 & Potato \\ \hline
+10 & Raspberry \\ \hline
+11 & Soybean \\ \hline
+12 & Squash \\ \hline
+13 & Strawberry \\ \hline
+14 & Tomato \\ \hline
+\end{tabular}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.53\textwidth}
+\centering
+\caption{Tabel Kelas Sehat}
+\begin{tabular}{|c|p{4.5cm}|}
+\hline
+\textbf{No} & \textbf{Kelas Sehat} \\ \hline
+1 & Apple\_\_\_\allowbreak healthy \\ \hline
+2 & Blueberry\_\_\_\allowbreak healthy \\ \hline
+3 & Cherry\_(including\_sour)\_\_\_\allowbreak healthy \\ \hline
+4 & Corn\_(maize)\_\_\_\allowbreak healthy \\ \hline
+5 & Grape\_\_\_\allowbreak healthy \\ \hline
+6 & Peach\_\_\_\allowbreak healthy \\ \hline
+7 & Pepper,\_bell\_\_\_\allowbreak healthy \\ \hline
+8 & Potato\_\_\_\allowbreak healthy \\ \hline
+9 & Raspberry\_\_\_\allowbreak healthy \\ \hline
+10 & Soybean\_\_\_\allowbreak healthy \\ \hline
+11 & Strawberry\_\_\_\allowbreak healthy \\ \hline
+12 & Tomato\_\_\_\allowbreak healthy \\ \hline
+\end{tabular}
+\end{minipage}
+\end{table}
+
+\begin{table}[H]
+\centering
+\small
+\caption{Tabel Kelas Penyakit}
+\begin{tabular}{|c|p{5.5cm}|c|p{5.5cm}|}
+\hline
+\textbf{No} & \textbf{Kelas Penyakit} & \textbf{No} & \textbf{Kelas Penyakit} \\ \hline
+1 & Apple\_\_\_\allowbreak Apple\_scab & 14 & Potato\_\_\_\allowbreak Early\_blight \\ \hline
+2 & Apple\_\_\_\allowbreak Black\_rot & 15 & Potato\_\_\_\allowbreak Late\_blight \\ \hline
+3 & Apple\_\_\_\allowbreak Cedar\_apple\_rust & 16 & Squash\_\_\_\allowbreak Powdery\_mildew \\ \hline
+4 & Cherry\_(including\_sour)\_\_\_\allowbreak Powdery\_mildew & 17 & Strawberry\_\_\_\allowbreak Leaf\_scorch \\ \hline
+5 & Corn\_(maize)\_\_\_\allowbreak Cercospora\_leaf\_spot Gray\_leaf\_... & 18 & Tomato\_\_\_\allowbreak Bacterial\_spot \\ \hline
+6 & Corn\_(maize)\_\_\_\allowbreak Common\_rust\_ & 19 & Tomato\_\_\_\allowbreak Early\_blight \\ \hline
+7 & Corn\_(maize)\_\_\_\allowbreak Northern\_Leaf\_Blight & 20 & Tomato\_\_\_\allowbreak Late\_blight \\ \hline
+8 & Grape\_\_\_\allowbreak Black\_rot & 21 & Tomato\_\_\_\allowbreak Leaf\_Mold \\ \hline
+9 & Grape\_\_\_\allowbreak Esca\_(Black\_Measles) & 22 & Tomato\_\_\_\allowbreak Septoria\_leaf\_spot \\ \hline
+10 & Grape\_\_\_\allowbreak Leaf\_blight\_(Isariopsis\_Leaf\_Spot) & 23 & Tomato\_\_\_\allowbreak Spider\_mites Two-spotted\_spider\_mite \\ \hline
+11 & Orange\_\_\_\allowbreak Haunglongbing\_(Citrus\_greening) & 24 & Tomato\_\_\_\allowbreak Target\_Spot \\ \hline
+12 & Peach\_\_\_\allowbreak Bacterial\_spot & 25 & Tomato\_\_\_\allowbreak Tomato\_Yellow\_Leaf\_Curl\_Virus \\ \hline
+13 & Pepper,\_bell\_\_\_\allowbreak Bacterial\_spot & 26 & Tomato\_\_\_\allowbreak Tomato\_mosaic\_virus \\ \hline
+\end{tabular}
+\end{table}
+
+\subsection{Identifikasi Data yang Akan Digunakan}
+
+Melihat luasnya cakupan 14 jenis tanaman dan puluhan penyakit dari tabel di atas, melatih AI untuk mengenali semuanya sekaligus tentu membutuhkan komputasi yang sangat besar. Oleh karena itu, agar *prototype* sistem lebih fokus dan efisien, ruang lingkup data akan dibatasi khusus pada komoditas daun Tomat. Secara spesifik, kita hanya akan mengekstrak lima kondisi target: \textbf{Bacterial Spot}, \textbf{Early Blight}, \textbf{Late Blight}, \textbf{Leaf Mold}, dan \textbf{Healthy}. Mari kita saring *dataset* ini dan hitung berapa banyak "amunisi" gambar yang siap digunakan untuk melatih model!
+
+\begin{lstlisting}[language=Python, caption=Menentukan dan menghitung data target]
+
+# 1. Menentukan kelas yang akan digunakan sesuai proposal
+
+target_classes = {
+    "Tomato___Bacterial_spot": "Bacterial Spot",
+    "Tomato___Early_blight": "Early Blight",
+    "Tomato___Late_blight": "Late Blight",
+    "Tomato___Leaf_Mold": "Leaf Mold",
+    "Tomato___healthy": "Healthy"
+}
+
+target_class_folders = list(target_classes.keys())
+
+# 2. Fungsi untuk mencari folder train dan valid secara otomatis
+
+def find_split_dir(dataset_path, split_name, target_class_folders):
+    """
+    Fungsi untuk mencari folder train atau valid yang berisi kelas target.
+    """
+    for root, dirs, files in os.walk(dataset_path):
+        if os.path.basename(root).lower() == split_name.lower():
+            if any(class_folder in dirs for class_folder in target_class_folders):
+                return root
+
+    return None
+
+train_dir = find_split_dir(dataset_path, "train", target_class_folders)
+valid_dir = find_split_dir(dataset_path, "valid", target_class_folders)
+
+print("Folder train:", train_dir)
+print("Folder valid:", valid_dir)
+
+if train_dir is None:
+    raise FileNotFoundError("Folder train tidak ditemukan atau tidak berisi kelas target.")
+
+if valid_dir is None:
+    raise FileNotFoundError("Folder valid tidak ditemukan atau tidak berisi kelas target.")
+
+# 3. Fungsi untuk menghitung jumlah gambar
+
+image_extensions = (".jpg", ".jpeg", ".png")
+
+def count_images(folder_path):
+    """
+    Menghitung jumlah file gambar dalam sebuah folder.
+    """
+    total = 0
+
+    if not os.path.exists(folder_path):
+        return 0
+
+    for root, dirs, files in os.walk(folder_path):
+        total += len([
+            file for file in files
+            if file.lower().endswith(image_extensions)
+        ])
+
+    return total
+
+# 4. Membuat tabel data yang akan digunakan
+import pandas as pd
+
+rows = []
+
+for original_class, output_label in target_classes.items():
+    train_class_path = os.path.join(train_dir, original_class)
+    valid_class_path = os.path.join(valid_dir, original_class)
+
+    train_count = count_images(train_class_path)
+    valid_count = count_images(valid_class_path)
+
+    plant_name = original_class.split("___")[0]
+    category = "Sehat" if output_label == "Healthy" else "Penyakit"
+
+    rows.append({
+        "Nama Folder Dataset": original_class,
+        "Jenis Tanaman": plant_name,
+        "Output Model": output_label,
+        "Kategori": category,
+        "Jumlah Train": train_count,
+        "Jumlah Valid": valid_count,
+        "Total Gambar": train_count + valid_count
+    })
+
+df_target_data = pd.DataFrame(rows)
+
+# 5. Menampilkan ringkasan data yang digunakan
+
+print("Total kelas yang digunakan :", len(df_target_data))
+print("Total gambar train         :", df_target_data["Jumlah Train"].sum())
+print("Total gambar valid         :", df_target_data["Jumlah Valid"].sum())
+print("Total seluruh gambar       :", df_target_data["Total Gambar"].sum())
+
+display(df_target_data)
+\end{lstlisting}
+
+Output teks yang akan tampil setelah kode dijalankan:
+
+\begin{outputcode}[H]
+\begin{lstlisting}[language={}]
+Folder train: /kaggle/input/new-plant-diseases-dataset/New Plant Diseases Dataset(Augmented)/New Plant Diseases Dataset(Augmented)/train
+Folder valid: /kaggle/input/new-plant-diseases-dataset/New Plant Diseases Dataset(Augmented)/New Plant Diseases Dataset(Augmented)/valid
+Total kelas yang digunakan : 5
+Total gambar train         : 9281
+Total gambar valid         : 2319
+Total seluruh gambar       : 11600
+\end{lstlisting}
+\caption{Output ringkasan data target}
+\end{outputcode}
+
+Selain output teks di atas, kode tersebut juga akan menghasilkan tabel interaktif yang berisi rincian jumlah gambar untuk masing-masing kelas target. Berikut adalah representasi tabel tersebut:
+
+\begin{table}[H]
+\centering
+\small
+\caption{Tabel Rincian Data Target (Daun Tomat)}
+\begin{tabular}{|l|l|l|l|c|c|c|}
+\hline
+\textbf{Nama Folder Dataset} & \textbf{Jenis Tanaman} & \textbf{Output Model} & \textbf{Kategori} & \textbf{Jml Train} & \textbf{Jml Valid} & \textbf{Total} \\ \hline
+Tomato\_\_\_\allowbreak Bacterial\_spot & Tomato & Bacterial Spot & Penyakit & 1702 & 425 & 2127 \\ \hline
+Tomato\_\_\_\allowbreak Early\_blight & Tomato & Early Blight & Penyakit & 1920 & 480 & 2400 \\ \hline
+Tomato\_\_\_\allowbreak Late\_blight & Tomato & Late Blight & Penyakit & 1851 & 463 & 2314 \\ \hline
+Tomato\_\_\_\allowbreak Leaf\_Mold & Tomato & Leaf Mold & Penyakit & 1882 & 470 & 2352 \\ \hline
+Tomato\_\_\_\allowbreak healthy & Tomato & Healthy & Sehat & 1926 & 481 & 2407 \\ \hline
+\end{tabular}
+\end{table}
+
+\subsection{Visualisasi Distribusi Data yang Digunakan}
+
+Setelah lima kelas target ditentukan, langkah selanjutnya adalah menampilkan distribusi jumlah gambar pada masing-masing kelas. Visualisasi ini berguna untuk melihat perbandingan proporsi data \textit{training} dan \textit{validation} pada kelas \textbf{Bacterial Spot}, \textbf{Early Blight}, \textbf{Late Blight}, \textbf{Leaf Mold}, dan \textbf{Healthy}. Pemeriksaan ini penting karena ketidakseimbangan jumlah data antar kelas dapat memengaruhi performa model saat proses pelatihan.
+
+\begin{lstlisting}[language=Python, caption=Membuat visualisasi distribusi data target]
+
+# 1. Validasi dataframe
+
+required_columns = [
+    "Output Model",
+    "Jumlah Train",
+    "Jumlah Valid",
+    "Total Gambar"
+]
+
+for column in required_columns:
+    if column not in df_target_data.columns:
+        raise ValueError(f"Kolom '{column}' tidak ditemukan pada df_target_data.")
+
+# 2. Membuat dataframe untuk visualisasi
+
+plot_data = df_target_data[
+    ["Output Model", "Jumlah Train", "Jumlah Valid"]
+].set_index("Output Model")
+
+# 3. Membuat bar chart jumlah train dan valid
+
+plt.figure(figsize=(12, 6))
+
+ax = plot_data.plot(
+    kind="bar",
+    figsize=(12, 6)
+)
+
+plt.title("Distribusi Jumlah Gambar pada Data yang Digunakan")
+plt.xlabel("Kelas Kondisi Daun Tomat")
+plt.ylabel("Jumlah Gambar")
+plt.xticks(rotation=30, ha="right")
+plt.grid(axis="y", linestyle="--", alpha=0.7)
+plt.legend(title="Jenis Data")
+
+# Menampilkan angka di atas setiap bar
+for container in ax.containers:
+    ax.bar_label(container, fontsize=9)
+
+plt.tight_layout()
+plt.show()
+\end{lstlisting}
+
+Output grafik dari kode di atas adalah sebagai berikut:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{gambar/2.6.png}
+    \caption{Visualisasi Distribusi Jumlah Gambar pada 5 Kelas Target}
+\end{figure}
+
+Dari grafik di atas, terlihat bahwa kelima kelas target memiliki distribusi jumlah gambar yang relatif seimbang, yakni berkisar antara 1.700 hingga 1.900 gambar untuk data \textit{training}, dan 420 hingga 480 gambar untuk data \textit{validation}. Keseimbangan proporsi ini merupakan indikator yang sangat baik. Dengan jumlah sampel yang setara, model AI dapat mempelajari karakteristik setiap kelas secara merata dan mencegah terjadinya bias prediksi ke salah satu kondisi daun tertentu.
+
+\subsection{Visualisasi Total Gambar per Kelas}
+
+Selain membandingkan porsi data \textit{training} dan \textit{validation}, kita juga perlu melihat akumulasi total gambar secara keseluruhan pada setiap kelas. Langkah ini merupakan penegasan akhir untuk memastikan bahwa tidak ada kelas yang mendominasi ataupun kekurangan sampel sebelum kita melangkah ke tahapan prapemrosesan dan pelatihan model.
+
+\begin{lstlisting}[language=Python, caption=Membuat visualisasi total gambar]
+
+plt.figure(figsize=(10, 5))
+
+ax = df_target_data.plot(
+    x="Output Model",
+    y="Total Gambar",
+    kind="bar",
+    legend=False,
+    figsize=(10, 5)
+)
+
+plt.title("Total Gambar pada Setiap Kelas")
+plt.xlabel("Kelas Kondisi Daun Tomat")
+plt.ylabel("Total Gambar")
+plt.xticks(rotation=30, ha="right")
+plt.grid(axis="y", linestyle="--", alpha=0.7)
+
+# Menampilkan angka di atas bar
+for container in ax.containers:
+    ax.bar_label(container, fontsize=9)
+
+plt.tight_layout()
+plt.show()
+\end{lstlisting}
+
+Output grafik total gambar adalah sebagai berikut:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{gambar/2.7.png}
+    \caption{Visualisasi Total Gambar pada Setiap Kelas Target}
+\end{figure}
+
+Berdasarkan grafik di atas, kelima kelas target secara konsisten memiliki akumulasi total antara 2.100 hingga 2.400 gambar. Angka yang proporsional ini memastikan bahwa \textit{dataset} kita sudah sepenuhnya ideal dan siap untuk diproses lebih lanjut ke tahap pemodelan.
+
+\subsection{Ringkasan Jumlah Data Training dan Validation}
+
+Sebagai penutup dari tahapan eksplorasi data, kita akan merangkum kembali angka final keseluruhan gambar yang telah disaring. Ringkasan ini memastikan kepastian total data \textit{training} dan \textit{validation} yang akan dilibatkan secara langsung ke dalam proses pelatihan dan evaluasi model.
+
+\begin{lstlisting}[language=Python, caption=Menghitung ringkasan akhir jumlah data]
+
+# Menghitung total gambar pada data training
+n_train = df_target_data["Jumlah Train"].sum()
+
+# Menghitung total gambar pada data validation
+n_valid = df_target_data["Jumlah Valid"].sum()
+
+# Menghitung total seluruh gambar yang digunakan
+n_total = df_target_data["Total Gambar"].sum()
+
+# Menampilkan ringkasan jumlah data
+print("Jumlah gambar untuk training   :", n_train)
+print("Jumlah gambar untuk validation :", n_valid)
+print("Total gambar yang digunakan    :", n_total)
+\end{lstlisting}
+
+Output dari perhitungan di atas adalah sebagai berikut:
+
+\begin{outputcode}[H]
+\begin{lstlisting}[language={}]
+Jumlah gambar untuk training   : 9281
+Jumlah gambar untuk validation : 2319
+Total gambar yang digunakan    : 11600
+\end{lstlisting}
+\caption{Output ringkasan akhir data}
+\end{outputcode}

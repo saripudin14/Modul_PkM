@@ -16,6 +16,8 @@
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{caption}
+\newfloat{outputcode}{H}{loc}
+\floatname{outputcode}{Output}
 \usepackage[most]{tcolorbox}
 
 % Package Warna dan Link
@@ -28,6 +30,9 @@
 \definecolor{codegray}{rgb}{0.5,0.5,0.5}
 \definecolor{codepurple}{rgb}{0.58,0,0.82}
 \definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\renewcommand{\lstlistlistingname}{Daftar Potongan Kode}
+\renewcommand{\lstlistingname}{Kode}
 
 \lstdefinestyle{colabstyle}{
     backgroundcolor=\color{backcolour},   
@@ -82,8 +87,22 @@
 \include{chapter/00_kata_pengantar}
 
 \tableofcontents
+
+\clearpage
+\addcontentsline{toc}{chapter}{\listfigurename}
 \listoffigures
-% \listoftables
+
+\clearpage
+\addcontentsline{toc}{chapter}{\listtablename}
+\listoftables
+
+\clearpage
+\addcontentsline{toc}{chapter}{\lstlistlistingname}
+\lstlistoflistings
+
+\clearpage
+\addcontentsline{toc}{chapter}{Daftar Output Kode}
+\listof{outputcode}{Daftar Output Kode}
 
 % Bagian Isi
 \mainmatter
