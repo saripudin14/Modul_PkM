@@ -15,10 +15,10 @@ for ($i=1; $i -le 5; $i++) {
 
 # Pembersihan
 Write-Host "Membersihkan file cache sementara... " -NoNewline
-$cacheExtensions = @("*.aux", "*.log", "*.out", "*.toc", "*.lof", "*.lot", "*.fls", "*.fdb_latexmk", "*.synctex.gz", "*.bbl", "*.blg")
+$cacheExtensions = @("*.aux", "*.log", "*.out", "*.toc", "*.lof", "*.lot", "*.fls", "*.fdb_latexmk", "*.synctex.gz", "*.bbl", "*.blg", "*.lol", "*.loc")
 
 foreach ($ext in $cacheExtensions) {
-    Get-ChildItem -Path . -Filter $ext -Recurse -ErrorAction SilentlyContinue | Remove-Item -Force
+    Get-ChildItem -Path . -Filter $ext -Recurse -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
 }
 Write-Host "[OK]" -ForegroundColor Green
 
