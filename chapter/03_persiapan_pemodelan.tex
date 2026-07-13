@@ -1,0 +1,527 @@
+\chapter{Persiapan Data untuk Pemodelan}
+
+Pada Bab 2, kita telah berhasil mengunduh dataset dari KaggleHub, menyiapkan \textit{environment}, dan melakukan eksplorasi data awal. Melalui EDA, kita memperoleh gambaran bahwa dari total 38 kelas tanaman, prototype ini akan berfokus pada \textbf{5 kelas kondisi daun tomat} --- yaitu \textbf{Bacterial Spot}, \textbf{Early Blight}, \textbf{Late Blight}, \textbf{Leaf Mold}, dan \textbf{Healthy} --- dengan total 11.600 gambar yang telah terkonfirmasi distribusinya relatif seimbang.
+
+Kini setelah data terpilih dan karakteristiknya kita pahami, langkah berikutnya adalah menyiapkan data tersebut agar benar-benar siap digunakan untuk proses \textit{training} model.
+
+Pada fase ini, dataset yang telah difilter akan melalui serangkaian tahapan teknis: pembuatan subset dataset khusus, penerapan transformasi gambar, pembacaan data menggunakan \texttt{ImageFolder}, hingga pembuatan \texttt{DataLoader} yang akan menjadi jembatan antara data mentah dengan proses pelatihan model pada bab selanjutnya.
+
+\section{Menentukan Kelas Target}
+
+Pada Bab 2, kita telah berhasil mengidentifikasi 5 kelas target dari total 38 kelas yang tersedia dalam dataset. Proses identifikasi dan pemfilteran tersebut telah menghasilkan daftar kelas yang sesuai dengan batasan sistem yang ditetapkan pada Bab 1.
+
+Sekarang, kita akan mendefinisikan secara eksplisit kelima kelas tersebut dalam bentuk \texttt{dictionary} Python. \texttt{Dictionary} ini akan memetakan nama folder asli dari dataset Kaggle (seperti \texttt{Tomato\_\_\_\allowbreak Bacterial\_spot}) menjadi nama kelas yang lebih rapi dan mudah dibaca (seperti \texttt{Bacterial Spot}). Pemetaan ini penting karena akan digunakan berulang kali pada tahap-tahap selanjutnya, mulai dari pembuatan subset dataset hingga pelatihan model.
+
+\begin{lstlisting}[language=Python, caption=Menentukan kelas target]
+# FASE 3.1 - Menentukan Kelas Target
+
+target_classes = {
+    "Tomato___Bacterial_spot": "Bacterial Spot",
+    "Tomato___Early_blight": "Early Blight",
+    "Tomato___Late_blight": "Late Blight",
+    "Tomato___Leaf_Mold": "Leaf Mold",
+    "Tomato___healthy": "Healthy"
+}
+
+print("Kelas target yang akan digunakan:")
+
+for original_class, output_label in target_classes.items():
+    print(f"- {original_class} -> {output_label}")
+\end{lstlisting}
+
+Output yang akan tampil setelah kode dijalankan adalah sebagai berikut:
+
+\begin{outputcode}[H]
+\begin{lstlisting}[language={}]
+Kelas target yang akan digunakan:
+- Tomato___Bacterial_spot -> Bacterial Spot
+- Tomato___Early_blight -> Early Blight
+- Tomato___Late_blight -> Late Blight
+- Tomato___Leaf_Mold -> Leaf Mold
+- Tomato___healthy -> Healthy
+\end{lstlisting}
+\caption{Output penentuan kelas target}
+\end{outputcode}
+
+\section{Membuat Dataset Subset 5 Kelas}
+
+Setelah kelas target didefinisikan, langkah berikutnya adalah mengekstrak data yang sesuai dari dataset asli. Pada Bab 2, kita telah mengetahui bahwa total gambar yang akan digunakan adalah \textbf{11.600 gambar}, terdiri dari 9.281 data \textit{training} dan 2.319 data \textit{validation}. Namun, data tersebut masih berada di dalam folder dataset asli yang bercampur dengan kelas-kelas tanaman lain.
+
+Agar model hanya belajar dari kelas yang sesuai dengan prototype, kita perlu membuat folder dataset baru yang hanya berisi kelima kelas target. Folder baru ini akan memisahkan data daun tomat dari tanaman lainnya, sehingga memudahkan proses pembacaan data pada tahap selanjutnya.
+
+Folder baru ini akan berisi data training dan validation dengan nama kelas yang sudah dirapikan (\texttt{Bacterial Spot}, \texttt{Early Blight}, dll.), bukan lagi nama folder asli dari Kaggle (\texttt{Tomato\_\_\_\allowbreak Bacterial\_spot}, dll.).
+
+\begin{lstlisting}[language=Python, caption=Membuat subset dataset 5 kelas tomat]
+import os
+import shutil
+
+# Folder sumber dataset
+data_dir = os.path.join(
+    dataset_path,
+    "New Plant Diseases Dataset(Augmented)",
+    "New Plant Diseases Dataset(Augmented)"
+)
+
+train_dir = os.path.join(data_dir, "train")
+valid_dir = os.path.join(data_dir, "valid")
+
+# Folder tujuan subset dataset
+subset_dir = "/content/tomato_5class_dataset"
+subset_train_dir = os.path.join(subset_dir, "train")
+subset_valid_dir = os.path.join(subset_dir, "valid")
+
+# Membuat folder utama subset
+os.makedirs(subset_train_dir, exist_ok=True)
+os.makedirs(subset_valid_dir, exist_ok=True)
+
+# Menyalin data target dari dataset asli ke folder subset
+for original_class, output_label in target_classes.items():
+    source_train_path = os.path.join(train_dir, original_class)
+    source_valid_path = os.path.join(valid_dir, original_class)
+
+    target_train_path = os.path.join(subset_train_dir, output_label)
+    target_valid_path = os.path.join(subset_valid_dir, output_label)
+
+    if os.path.exists(source_train_path):
+        shutil.copytree(source_train_path, target_train_path, dirs_exist_ok=True)
+        print(f"Train berhasil disiapkan: {original_class} -> {output_label}")
+    else:
+        print(f"Folder train tidak ditemukan: {source_train_path}")
+
+    if os.path.exists(source_valid_path):
+        shutil.copytree(source_valid_path, target_valid_path, dirs_exist_ok=True)
+        print(f"Valid berhasil disiapkan: {original_class} -> {output_label}")
+    else:
+        print(f"Folder valid tidak ditemukan: {source_valid_path}")
+
+print("\nSubset dataset selesai dibuat.")
+print("Lokasi subset dataset:", subset_dir)
+\end{lstlisting}
+
+Output yang akan tampil setelah kode dijalankan adalah sebagai berikut:
+
+\begin{outputcode}[H]
+\begin{lstlisting}[language={}]
+Train berhasil disiapkan: Tomato___Bacterial_spot -> Bacterial Spot
+Valid berhasil disiapkan: Tomato___Bacterial_spot -> Bacterial Spot
+Train berhasil disiapkan: Tomato___Early_blight -> Early Blight
+Valid berhasil disiapkan: Tomato___Early_blight -> Early Blight
+Train berhasil disiapkan: Tomato___Late_blight -> Late Blight
+Valid berhasil disiapkan: Tomato___Late_blight -> Late Blight
+Train berhasil disiapkan: Tomato___Leaf_Mold -> Leaf Mold
+Valid berhasil disiapkan: Tomato___Leaf_Mold -> Leaf Mold
+Train berhasil disiapkan: Tomato___healthy -> Healthy
+Valid berhasil disiapkan: Tomato___healthy -> Healthy
+
+Subset dataset selesai dibuat.
+Lokasi subset dataset: /content/tomato_5class_dataset
+\end{lstlisting}
+\caption{Output pembuatan subset dataset}
+\end{outputcode}
+
+\section{Menentukan Transformasi Gambar}
+
+Sebelum gambar dimasukkan ke model, gambar perlu diproses terlebih dahulu. Pada Bab 2, kita telah melihat contoh gambar dataset dan mengetahui bahwa setiap gambar dalam dataset ini sudah memiliki ukuran \textbf{256\texttimes256 piksel}. Ukuran ini akan kita pertahankan sebagai ukuran input model.
+
+Selain mengubah ukuran, kita juga perlu mengonversi gambar --- yang awalnya berupa file \texttt{.jpg} atau \texttt{.png} --- menjadi format tensor agar dapat dibaca oleh PyTorch. Untuk data training, kita juga menambahkan augmentasi gambar (\textit{random horizontal flip} dan \textit{random rotation}) guna memperkaya variasi data dan mencegah model \textit{overfitting}. Sementara untuk data validation, cukup dilakukan \textit{resize} dan konversi ke tensor tanpa augmentasi.
+
+\begin{lstlisting}[language=Python, caption=Menentukan transformasi gambar]
+IMAGE_SIZE = 256
+
+train_transform = transforms.Compose([
+    transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
+    transforms.RandomHorizontalFlip(),
+    transforms.RandomRotation(10),
+    transforms.ToTensor()
+])
+
+valid_transform = transforms.Compose([
+    transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
+    transforms.ToTensor()
+])
+
+print("Transformasi gambar berhasil disiapkan.")
+\end{lstlisting}
+
+Output yang akan tampil setelah kode dijalankan adalah sebagai berikut:
+
+\begin{outputcode}[H]
+\begin{lstlisting}[language={}]
+Transformasi gambar berhasil disiapkan.
+\end{lstlisting}
+\caption{Output transformasi gambar}
+\end{outputcode}
+
+\section{Membuat Dataset ImageFolder}
+
+Setelah subset dataset lima kelas berhasil dibuat dan transformasi gambar ditentukan, langkah berikutnya adalah membaca dataset menggunakan \texttt{ImageFolder}. Pada tahap ini, kita akan memverifikasi apakah jumlah data yang terbaca sesuai dengan temuan pada Bab 2 --- yaitu 9.281 data \textit{training} dan 2.319 data \textit{validation}.
+
+\texttt{ImageFolder} akan membaca data berdasarkan struktur folder. Setiap subfolder dianggap sebagai satu kelas. Pada tahap ini, dataset yang dibaca adalah dataset subset yang hanya berisi lima kelas kondisi daun tomat, yaitu Bacterial Spot, Early Blight, Late Blight, Leaf Mold, dan Healthy.
+
+\begin{lstlisting}[language=Python, caption=Membuat dataset dengan ImageFolder]
+from torchvision.datasets import ImageFolder
+import torchvision.transforms as transforms
+
+# Ukuran gambar yang digunakan sebagai input model
+IMAGE_SIZE = 256
+
+# Transformasi untuk data training
+train_transform = transforms.Compose([
+    transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
+    transforms.RandomHorizontalFlip(),
+    transforms.RandomRotation(10),
+    transforms.ToTensor()
+])
+
+# Transformasi untuk data validation
+valid_transform = transforms.Compose([
+    transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
+    transforms.ToTensor()
+])
+
+# Membaca dataset subset 5 kelas menggunakan ImageFolder
+train = ImageFolder(subset_train_dir, transform=train_transform)
+valid = ImageFolder(subset_valid_dir, transform=valid_transform)
+
+# Mengambil daftar kelas
+classes = train.classes
+num_classes = len(classes)
+
+# Menampilkan informasi dataset
+print("Dataset training berhasil dibuat.")
+print("Dataset validation berhasil dibuat.")
+print("Jumlah kelas:", num_classes)
+print("Daftar kelas:", classes)
+print("Jumlah data training:", len(train))
+print("Jumlah data validation:", len(valid))
+
+# Validasi agar kelas train dan valid sama
+if train.classes != valid.classes:
+    raise ValueError("Kelas pada data training dan validation tidak sama.")
+
+print("Kelas training dan validation sudah sesuai.")
+\end{lstlisting}
+
+Output yang akan tampil setelah kode dijalankan adalah sebagai berikut:
+
+\begin{outputcode}[H]
+\begin{lstlisting}[language={}]
+Dataset training berhasil dibuat.
+Dataset validation berhasil dibuat.
+Jumlah kelas: 5
+Daftar kelas: ['Bacterial Spot', 'Early Blight', 'Healthy', 'Late Blight', 'Leaf Mold']
+Jumlah data training: 9281
+Jumlah data validation: 2319
+Kelas training dan validation sudah sesuai.
+\end{lstlisting}
+\caption{Output pembuatan dataset ImageFolder}
+\end{outputcode}
+
+\section{Mengecek Bentuk Data Gambar dan Label}
+
+Setelah dataset berhasil dibaca menggunakan \texttt{ImageFolder}, langkah berikutnya adalah mengecek bentuk data gambar dan label. Pada Bab 2, kita telah melihat bahwa setiap gambar dalam dataset asli berukuran 256\texttimes256 piksel. Sekarang, setelah melalui transformasi, kita dapat memverifikasi bahwa bentuk tensor gambar yang dihasilkan adalah \texttt{[3, 256, 256]} --- yaitu 3 \textit{channel} warna (RGB) dengan tinggi dan lebar 256 piksel.
+
+Pada tahap ini, kita mengambil satu contoh data dari dataset training. Gambar akan ditampilkan dalam bentuk tensor, sedangkan label akan ditampilkan dalam bentuk angka sesuai urutan kelas.
+
+\begin{lstlisting}[language=Python, caption=Mengecek bentuk tensor gambar dan label]
+# Mengambil satu contoh gambar dan label dari dataset training
+img, label = train[0]
+
+# Menampilkan bentuk tensor gambar dan label numerik
+print("Shape gambar :", img.shape)
+print("Label angka  :", label)
+print("Nama kelas   :", classes[label])
+\end{lstlisting}
+
+Output yang akan tampil setelah kode dijalankan adalah sebagai berikut:
+
+\begin{outputcode}[H]
+\begin{lstlisting}[language={}]
+Shape gambar : torch.Size([3, 256, 256])
+Label angka  : 0
+Nama kelas   : Bacterial Spot
+\end{lstlisting}
+\caption{Output pengecekan bentuk data}
+\end{outputcode}
+
+\section{Mengecek Jumlah Kelas Dataset}
+
+Setelah dataset berhasil dimuat menggunakan \texttt{ImageFolder}, kita perlu mengecek jumlah kelas yang tersedia. Pada Bab 2, kita telah mengidentifikasi bahwa prototype ini akan menggunakan \textbf{5 kelas kondisi daun tomat}. Sekarang, kita akan memverifikasi apakah \texttt{ImageFolder} membaca jumlah kelas yang sesuai dengan identifikasi tersebut.
+
+Tahap ini penting karena jumlah kelas dataset harus sesuai dengan output model. Pada prototype ini, jumlah kelas yang diharapkan adalah \textbf{5 kelas}, yaitu Bacterial Spot, Early Blight, Healthy, Late Blight, dan Leaf Mold --- sebagaimana telah ditetapkan pada batasan sistem di Bab 1 dan dikonfirmasi melalui EDA di Bab 2.
+
+\begin{lstlisting}[language=Python, caption=Mengecek jumlah kelas dataset]
+# Menghitung jumlah kelas pada dataset training
+num_classes = len(train.classes)
+
+# Menampilkan jumlah kelas dan daftar kelas
+print("Jumlah kelas:", num_classes)
+print("Daftar kelas:")
+
+for index, class_name in enumerate(train.classes):
+    print(f"{index}: {class_name}")
+\end{lstlisting}
+
+Output yang akan tampil setelah kode dijalankan adalah sebagai berikut:
+
+\begin{outputcode}[H]
+\begin{lstlisting}[language={}]
+Jumlah kelas: 5
+Daftar kelas:
+0: Bacterial Spot
+1: Early Blight
+2: Healthy
+3: Late Blight
+4: Leaf Mold
+\end{lstlisting}
+\caption{Output jumlah dan daftar kelas}
+\end{outputcode}
+
+\section{Membuat Fungsi untuk Menampilkan Gambar Dataset}
+
+Setelah gambar dan label berhasil dibaca, langkah berikutnya adalah membuat fungsi untuk menampilkan gambar. Pada Bab 2, kita telah melihat contoh gambar dataset menggunakan \texttt{plt.imshow()} secara langsung. Sekarang, kita akan membuat fungsi khusus yang lebih praktis untuk menampilkan gambar beserta label kelasnya.
+
+Fungsi ini digunakan untuk memastikan bahwa gambar yang masuk ke model sudah sesuai dan label yang terbaca sudah benar.
+
+\begin{lstlisting}[language=Python, caption=Membuat fungsi untuk menampilkan gambar]
+def show_image(image, label, classes):
+    """
+    Fungsi untuk menampilkan gambar dari dataset beserta label kelasnya.
+    """
+
+    class_name = classes[label]
+
+    print(f"Label: {class_name} ({label})")
+
+    plt.imshow(image.permute(1, 2, 0))
+    plt.title(class_name)
+    plt.axis("on")   # menampilkan skala sumbu X dan Y
+    plt.show()
+\end{lstlisting}
+
+Fungsi tersebut kemudian digunakan untuk menampilkan beberapa contoh gambar dari dataset training.
+
+\begin{lstlisting}[language=Python, caption=Menampilkan contoh gambar dataset]
+show_image(*train[0], classes)
+\end{lstlisting}
+
+\begin{outputcode}[H]
+\begin{lstlisting}[language={}]
+Label: Bacterial Spot (0)
+\end{lstlisting}
+\caption{Output gambar pertama (Bacterial Spot)}
+\end{outputcode}
+
+\begin{lstlisting}[language=Python, caption=Menampilkan contoh gambar lainnya]
+show_image(*train[4000], classes)
+\end{lstlisting}
+
+\begin{outputcode}[H]
+\begin{lstlisting}[language={}]
+Label: Healthy (2)
+\end{lstlisting}
+\caption{Output gambar Healthy}
+\end{outputcode}
+
+\section{Menentukan Random Seed}
+
+Pada tahap ini, kita menentukan nilai random seed agar proses eksperimen lebih konsisten. Seperti yang telah kita lakukan pada proses EDA di Bab 2, konsistensi hasil sangat penting dalam \textit{Machine Learning} agar eksperimen dapat direproduksi oleh siapapun yang menjalankan ulang notebook ini.
+
+Random seed digunakan untuk mengontrol proses acak, seperti pengacakan data, augmentasi gambar, dan inisialisasi bobot model. Dengan menggunakan seed yang sama, hasil training akan lebih mudah direproduksi ketika notebook dijalankan ulang.
+
+\begin{lstlisting}[language=Python, caption=Menentukan random seed]
+import random
+
+# Menentukan nilai random seed
+random_seed = 7
+
+# Mengatur seed untuk Python, NumPy, dan PyTorch
+random.seed(random_seed)
+np.random.seed(random_seed)
+torch.manual_seed(random_seed)
+
+# Mengatur seed untuk GPU jika tersedia
+if torch.cuda.is_available():
+    torch.cuda.manual_seed(random_seed)
+    torch.cuda.manual_seed_all(random_seed)
+
+print("Random seed berhasil diatur:", random_seed)
+\end{lstlisting}
+
+Output yang akan tampil setelah kode dijalankan adalah sebagai berikut:
+
+\begin{outputcode}[H]
+\begin{lstlisting}[language={}]
+Random seed berhasil diatur: 7
+\end{lstlisting}
+\caption{Output pengaturan random seed}
+\end{outputcode}
+
+\section{Menentukan Batch Size}
+
+Sebelum membuat DataLoader, kita perlu menentukan ukuran batch.
+
+Batch size adalah jumlah gambar yang diproses model dalam satu kali iterasi. Pada project ini, batch size yang digunakan adalah \textbf{32}, artinya model akan memproses 32 gambar sekaligus pada setiap langkah training.
+
+Penggunaan batch size membantu proses training menjadi lebih efisien dibandingkan memproses gambar satu per satu.
+
+\begin{lstlisting}[language=Python, caption=Menentukan batch size]
+# Menentukan jumlah gambar yang diproses dalam satu batch
+batch_size = 32
+
+print("Batch size yang digunakan:", batch_size)
+\end{lstlisting}
+
+Output yang akan tampil setelah kode dijalankan adalah sebagai berikut:
+
+\begin{outputcode}[H]
+\begin{lstlisting}[language={}]
+Batch size yang digunakan: 32
+\end{lstlisting}
+\caption{Output penentuan batch size}
+\end{outputcode}
+
+\section{Membuat DataLoader}
+
+Setelah dataset dan batch size disiapkan, langkah berikutnya adalah membuat DataLoader. DataLoader inilah yang akan menjadi jembatan antara data yang telah kita siapkan dengan proses pelatihan model pada \textbf{Bab 4}.
+
+DataLoader digunakan untuk memuat data secara bertahap dalam bentuk batch. Pada data training, \texttt{shuffle=True} digunakan agar urutan gambar diacak setiap epoch, sehingga model tidak menghafal urutan data.
+
+Pada data validation, \texttt{shuffle=False} digunakan karena data validasi hanya dipakai untuk mengevaluasi performa model, sehingga urutannya tidak perlu diacak.
+
+\begin{lstlisting}[language=Python, caption=Membuat DataLoader]
+from torch.utils.data import DataLoader
+
+# Mengecek apakah GPU tersedia
+use_cuda = torch.cuda.is_available()
+
+# DataLoader untuk data training
+train_dl = DataLoader(
+    train,
+    batch_size=batch_size,
+    shuffle=True,
+    num_workers=2,
+    pin_memory=use_cuda
+)
+
+# DataLoader untuk data validation
+valid_dl = DataLoader(
+    valid,
+    batch_size=batch_size,
+    shuffle=False,
+    num_workers=2,
+    pin_memory=use_cuda
+)
+
+# Menampilkan informasi DataLoader
+print("DataLoader berhasil dibuat.")
+print("Jumlah batch training   :", len(train_dl))
+print("Jumlah batch validation :", len(valid_dl))
+print("Menggunakan GPU         :", use_cuda)
+\end{lstlisting}
+
+Output yang akan tampil setelah kode dijalankan adalah sebagai berikut:
+
+\begin{outputcode}[H]
+\begin{lstlisting}[language={}]
+DataLoader berhasil dibuat.
+Jumlah batch training   : 291
+Jumlah batch validation : 73
+Menggunakan GPU         : True
+\end{lstlisting}
+\caption{Output pembuatan DataLoader}
+\end{outputcode}
+
+\section{Menampilkan Batch Gambar dari DataLoader}
+
+Setelah DataLoader berhasil dibuat, langkah berikutnya adalah menampilkan beberapa gambar dalam satu batch.
+
+Tahap ini bertujuan untuk memastikan bahwa gambar berhasil dimuat dengan benar sebelum masuk ke proses training model. Gambar ditampilkan dalam bentuk grid agar lebih mudah diamati secara visual.
+
+\begin{lstlisting}[language=Python, caption=Membuat fungsi untuk menampilkan batch gambar]
+def show_batch(data_loader, classes, max_images=32, nrow=8):
+
+    # Mengambil satu batch data
+    images, labels = next(iter(data_loader))
+
+    # Membatasi jumlah gambar yang ditampilkan
+    images = images[:max_images]
+    labels = labels[:max_images]
+
+    # Membuat grid gambar
+    image_grid = make_grid(images, nrow=nrow)
+
+    # Menampilkan grid gambar
+    plt.figure(figsize=(16, 16))
+    plt.imshow(image_grid.permute(1, 2, 0))
+    plt.axis("off")
+    plt.title("Contoh Batch Gambar Training")
+    plt.show()
+
+    # Menampilkan label gambar dalam batch
+    print("Label gambar pada batch:")
+
+    for index, label in enumerate(labels):
+        class_name = classes[label.item()]
+        print(f"{index + 1}. {class_name}")
+\end{lstlisting}
+
+Fungsi tersebut kemudian digunakan untuk menampilkan satu batch gambar dari DataLoader training.
+
+\begin{lstlisting}[language=Python, caption=Menampilkan batch gambar training]
+show_batch(train_dl, classes)
+\end{lstlisting}
+
+Output yang akan tampil setelah kode dijalankan adalah sebagai berikut:
+
+\begin{outputcode}[H]
+\begin{lstlisting}[language={}]
+Label gambar pada batch:
+1. Leaf Mold
+2. Bacterial Spot
+3. Healthy
+4. Healthy
+5. Late Blight
+6. Early Blight
+7. Early Blight
+8. Leaf Mold
+9. Leaf Mold
+10. Healthy
+11. Early Blight
+12. Late Blight
+13. Bacterial Spot
+14. Healthy
+15. Early Blight
+16. Leaf Mold
+17. Healthy
+18. Healthy
+19. Leaf Mold
+20. Early Blight
+21. Bacterial Spot
+22. Late Blight
+23. Healthy
+24. Late Blight
+25. Late Blight
+26. Late Blight
+27. Leaf Mold
+28. Late Blight
+29. Leaf Mold
+30. Early Blight
+31. Bacterial Spot
+32. Late Blight
+\end{lstlisting}
+\caption{Output batch gambar training}
+\end{outputcode}
+
+Dari output di atas, terlihat bahwa satu batch berisi campuran gambar dari kelima kelas secara acak, yang menandakan bahwa DataLoader bekerja dengan baik dalam menyajikan variasi data pada setiap iterasi. Dengan demikian, seluruh tahapan persiapan data untuk pemodelan telah selesai dilaksanakan.
+
+Sekarang kita telah memiliki:
+
+\begin{itemize}
+    \item Subset dataset 5 kelas daun tomat dengan struktur folder yang rapi.
+    \item Transformasi gambar yang mengubah ukuran menjadi 256×256 piksel dan mengonversinya menjadi tensor.
+    \item Dataset \texttt{ImageFolder} yang siap membaca data berdasarkan struktur folder.
+    \item \texttt{DataLoader} yang siap menyajikan data dalam bentuk \textit{batch} secara efisien.
+\end{itemize}
+
+Seluruh komponen data ini akan menjadi fondasi bagi tahap selanjutnya. Pada \textbf{Bab 4}, kita akan mulai membangun arsitektur model \textit{Deep Learning}, menyiapkan perangkat komputasi (GPU/CPU), dan melatih model untuk mengenali pola-pola penyakit pada daun tomat.

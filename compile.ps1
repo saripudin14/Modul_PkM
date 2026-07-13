@@ -1,3 +1,6 @@
+$scriptDir = $PSScriptRoot
+Set-Location $scriptDir
+
 Write-Host "Menyiapkan environment TinyTeX..."
 $env:Path += ";$env:APPDATA\TinyTeX\bin\windows"
 

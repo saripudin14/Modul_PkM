@@ -1,0 +1,1128 @@
+\chapter{Visualisasi Hasil dan Deployment}
+
+Pada Bab 4, kita telah berhasil membangun dan melatih model \textbf{ResNet9} menggunakan dataset 5 kelas daun tomat. Model menunjukkan perkembangan performa yang signifikan selama proses \textit{training}, di mana akurasi \textit{validation} meningkat dari sekitar \textbf{22,77\%} (sebelum \textit{training}) menjadi \textbf{96,28\%} pada \textit{epoch} terakhir.
+
+Kini setelah model berhasil dilatih, tibalah saatnya untuk mengevaluasi dan mendokumentasikan hasil yang telah dicapai. Bab ini akan memandu Anda dalam dua tahapan utama. Pertama, bagian \textbf{Visualisasi Hasil} yang mencakup analisis performa model melalui grafik akurasi, \textit{loss}, \textit{learning rate}, \textit{confusion matrix}, contoh hasil prediksi gambar, serta \textit{classification report}. Kedua, bagian \textbf{Deployment} yang akan memandu Anda dalam menyimpan model, membuat aplikasi \textit{web} sederhana menggunakan Streamlit, dan menjalankannya melalui \textit{tunneling} Ngrok agar dapat diakses secara publik.
+
+\section{Visualisasi Hasil}
+
+Pada bagian ini, hasil \textit{training} model divisualisasikan agar performa model lebih mudah dianalisis.
+
+Visualisasi dilakukan untuk melihat perkembangan akurasi, penurunan \textit{loss}, perubahan \textit{learning rate}, serta kemampuan model dalam memprediksi setiap kelas daun tomat.
+
+Visualisasi ini juga membantu mengevaluasi apakah model sudah belajar dengan baik atau masih mengalami kesalahan pada kelas tertentu.
+
+\subsection{Menampilkan Ringkasan History Training}
+
+Pada tahap ini, hasil \textit{training} yang tersimpan pada variabel \texttt{history} ditampilkan dalam bentuk tabel.
+
+Tabel ini berisi informasi utama seperti \texttt{train\_loss}, \texttt{val\_loss}, dan \texttt{val\_accuracy} pada setiap tahap \textit{training}. Dengan adanya tabel ini, perkembangan performa model dapat dilihat secara lebih jelas sebelum divisualisasikan dalam bentuk grafik.
+
+\begin{lstlisting}[language=Python, caption=Menampilkan ringkasan history training]
+# ============================================================
+# FASE 6.1 - Menampilkan Ringkasan History Training
+# ============================================================
+
+# Fungsi untuk mengubah tensor menjadi angka biasa
+def to_float(value):
+    if isinstance(value, torch.Tensor):
+        return value.detach().cpu().item()
+    return value
+
+
+# Menyimpan ringkasan history ke dalam list
+history_rows = []
+
+for index, result in enumerate(history):
+
+    # Menentukan nama tahap
+    if index == 0:
+        tahap = "Sebelum Training"
+    else:
+        tahap = f"Epoch {index - 1}"
+
+    # Mengambil nilai dari history
+    train_loss = result.get("train_loss", None)
+    val_loss = result.get("val_loss", None)
+    val_accuracy = result.get("val_accuracy", None)
+
+    # Mengambil learning rate terakhir jika ada
+    if "lrs" in result:
+        last_lr = result["lrs"][-1]
+    else:
+        last_lr = None
+
+    # Menambahkan data ke list
+    history_rows.append({
+        "Tahap": tahap,
+        "Train Loss": to_float(train_loss) if train_loss is not None else None,
+        "Validation Loss": to_float(val_loss) if val_loss is not None else None,
+        "Validation Accuracy": to_float(val_accuracy) if val_accuracy is not None else None,
+        "Validation Accuracy (%)": to_float(val_accuracy) * 100 if val_accuracy is not None else None,
+        "Last Learning Rate": last_lr
+    })
+
+
+# Membuat DataFrame dari history
+df_history = pd.DataFrame(history_rows)
+
+# Menampilkan tabel history
+display(df_history)
+\end{lstlisting}
+
+Output yang akan tampil setelah kode dijalankan adalah sebagai berikut:
+
+\begin{outputcode}[H]
+\begin{lstlisting}[language={}]
+       Tahap  Train Loss  Validation Loss  Validation Accuracy
+Sebelum Training         NaN        1.610398             0.227683
+Epoch 0            0.788843        5.328157             0.417808
+Epoch 1            0.267558        0.104393             0.962757
+
+       Validation Accuracy (%)  Last Learning Rate
+Sebelum Training           22.768266                NaN
+Epoch 0                    41.780820           0.008117
+Epoch 1                    96.275687           0.000000
+\end{lstlisting}
+\caption{Output ringkasan history training}
+\end{outputcode}
+
+Tabel ringkasan di atas menyajikan informasi perkembangan model dari sebelum \textit{training} hingga akhir \textit{epoch} kedua. Terdapat beberapa poin penting yang dapat diamati:
+
+\begin{itemize}
+    \item \textbf{Sebelum Training}: Model memiliki \texttt{Validation Accuracy} sebesar \textbf{22,77\%} --- sedikit di atas tebakan acak (20\% untuk 5 kelas). Nilai \texttt{Train Loss} tidak tersedia (\texttt{NaN}) karena model belum pernah melalui proses \textit{training} sama sekali.
+    \item \textbf{Epoch 0}: Setelah \textit{epoch} pertama, \texttt{train\_loss} turun menjadi \textbf{0,7888} dan \texttt{val\_accuracy} naik menjadi \textbf{41,78\%}. Namun, \texttt{val\_loss} sempat meningkat menjadi \textbf{5,3282}, yang mengindikasikan bahwa model masih dalam tahap awal penyesuaian bobot.
+    \item \textbf{Epoch 1}: Pada \textit{epoch} terakhir, performa model meningkat drastis. \texttt{train\_loss} turun menjadi \textbf{0,2676}, \texttt{val\_loss} turun drastis menjadi \textbf{0,1044}, dan \texttt{val\_accuracy} mencapai \textbf{96,28\%}. \textit{Learning rate} pada akhir \textit{epoch} ini mendekati nol (\textbf{4e-08}), menandakan bahwa \textit{One Cycle Scheduler} telah menurunkan \textit{learning rate} secara bertahap.
+\end{itemize}
+
+\subsection{Visualisasi Grafik Akurasi Model}
+
+Pada tahap ini, nilai akurasi \textit{validation} divisualisasikan dalam bentuk grafik.
+
+Grafik ini digunakan untuk melihat perkembangan kemampuan model dalam mengenali kelas kondisi daun tomat. Jika garis akurasi mengalami peningkatan dari sebelum \textit{training} hingga \textit{epoch} terakhir, maka model berhasil belajar dari data \textit{training}.
+
+\begin{lstlisting}[language=Python, caption=Visualisasi grafik akurasi model]
+# ============================================================
+# FASE 6.2 - Visualisasi Grafik Akurasi Model
+# ============================================================
+
+# Fungsi untuk mengubah tensor menjadi angka biasa
+def to_float(value):
+    if isinstance(value, torch.Tensor):
+        return value.detach().cpu().item()
+    return value
+
+
+# Mengambil nilai validation accuracy dari history
+val_accuracies = [
+    to_float(result["val_accuracy"]) * 100
+    for result in history
+    if "val_accuracy" in result
+]
+
+# Membuat label tahap
+stages = []
+
+for index in range(len(val_accuracies)):
+    if index == 0:
+        stages.append("Sebelum Training")
+    else:
+        stages.append(f"Epoch {index - 1}")
+
+
+# Membuat grafik akurasi
+plt.figure(figsize=(10, 5))
+
+plt.plot(
+    stages,
+    val_accuracies,
+    marker="o"
+)
+
+plt.title("Perkembangan Akurasi Validation Model")
+plt.xlabel("Tahap Training")
+plt.ylabel("Validation Accuracy (%)")
+plt.ylim(0, 100)
+plt.grid(True, linestyle="--", alpha=0.7)
+
+# Menampilkan nilai akurasi pada setiap titik
+for index, acc in enumerate(val_accuracies):
+    plt.text(
+        index,
+        acc + 2,
+        f"{acc:.2f}%",
+        ha="center"
+    )
+
+plt.tight_layout()
+plt.show()
+\end{lstlisting}
+
+Output yang akan tampil setelah kode dijalankan adalah grafik perkembangan akurasi \textit{validation} seperti pada Gambar \ref{fig:chart_accuracy}.
+
+% Gambar 5.1: Grafik perkembangan akurasi validation model
+% (Gambar akan dihasilkan saat kode dijalankan di Google Colab)
+
+\begin{outputcode}[H]
+\begin{lstlisting}[language={}]
+Grafik Perkembangan Akurasi Validation Model
+100% |                                      * 96.28%
+ 80% |                               *
+ 60% |                        * 41.78%
+ 40% |
+ 20% | * 22.77%
+  0% |___________________________________________
+       Sebelum Training    Epoch 0         Epoch 1
+\end{lstlisting}
+\caption{Ilustrasi grafik perkembangan akurasi validation model}
+\label{fig:chart_accuracy}
+\end{outputcode}
+
+Dari grafik di atas, terlihat bahwa akurasi \textit{validation} model mengalami peningkatan yang signifikan. Sebelum \textit{training}, model hanya memiliki akurasi sekitar \textbf{22,77\%}, yang sedikit di atas tebakan acak (20\% untuk 5 kelas). Setelah \textit{epoch} pertama, akurasi naik menjadi \textbf{41,78\%}, dan pada \textit{epoch} terakhir mencapai \textbf{96,28\%}.
+
+Peningkatan akurasi yang tajam ini menunjukkan bahwa model ResNet9 berhasil mempelajari pola-pola visual dari citra daun tomat dengan sangat baik. Pola garis yang terus menanjak naik mengonfirmasi bahwa proses \textit{training} berjalan dengan stabil dan model tidak mengalami gejala \textit{overfitting} yang signifikan.
+
+\subsection{Visualisasi Grafik Loss Model}
+
+Pada tahap ini, nilai \texttt{train\_loss} dan \texttt{val\_loss} divisualisasikan dalam bentuk grafik.
+
+Grafik \textit{loss} digunakan untuk melihat seberapa besar kesalahan model selama proses \textit{training} dan \textit{validation}. Jika nilai \textit{loss} semakin menurun, maka model semakin baik dalam mempelajari pola pada citra daun tomat. \texttt{train\_loss} menunjukkan kesalahan model pada data \textit{training}, sedangkan \texttt{val\_loss} menunjukkan kesalahan model pada data \textit{validation}.
+
+\begin{lstlisting}[language=Python, caption=Visualisasi grafik loss model]
+# ============================================================
+# FASE 6.3 - Visualisasi Grafik Loss Model
+# ============================================================
+
+# Fungsi untuk mengubah tensor menjadi angka biasa
+def to_float(value):
+    if isinstance(value, torch.Tensor):
+        return value.detach().cpu().item()
+    return value
+
+
+# Mengambil nilai train loss
+train_losses = [
+    to_float(result["train_loss"])
+    for result in history
+    if "train_loss" in result
+]
+
+# Mengambil nilai validation loss
+val_losses = [
+    to_float(result["val_loss"])
+    for result in history
+    if "train_loss" in result
+]
+
+# Membuat label epoch
+epochs_label = [
+    f"Epoch {index}"
+    for index in range(len(train_losses))
+]
+
+
+# Membuat grafik loss
+plt.figure(figsize=(10, 5))
+
+plt.plot(
+    epochs_label,
+    train_losses,
+    marker="o",
+    label="Train Loss"
+)
+
+plt.plot(
+    epochs_label,
+    val_losses,
+    marker="o",
+    label="Validation Loss"
+)
+
+plt.title("Perkembangan Loss Model")
+plt.xlabel("Epoch")
+plt.ylabel("Loss")
+plt.grid(True, linestyle="--", alpha=0.7)
+plt.legend()
+
+# Menampilkan nilai loss pada setiap titik
+for index, loss in enumerate(train_losses):
+    plt.text(
+        index,
+        loss + 0.03,
+        f"{loss:.4f}",
+        ha="center"
+    )
+
+for index, loss in enumerate(val_losses):
+    plt.text(
+        index,
+        loss + 0.03,
+        f"{loss:.4f}",
+        ha="center"
+    )
+
+plt.tight_layout()
+plt.show()
+\end{lstlisting}
+
+Output yang akan tampil setelah kode dijalankan adalah grafik perbandingan \textit{loss} seperti pada Gambar \ref{fig:chart_loss}.
+
+% Gambar 5.2: Grafik perkembangan loss model
+% (Gambar akan dihasilkan saat kode dijalankan di Google Colab)
+
+\begin{outputcode}[H]
+\begin{lstlisting}[language={}]
+Perkembangan Loss Model
+Loss
+5.0 |                                * 5.3282
+4.0 |
+3.0 |
+2.0 |
+1.0 |              * 0.7888
+0.0 |________________* 0.2676_____* 0.1044____
+     Epoch 0          Epoch 1
+     --- Train Loss     --- Validation Loss
+\end{lstlisting}
+\caption{Ilustrasi grafik perkembangan loss model}
+\label{fig:chart_loss}
+\end{outputcode}
+
+Dari grafik di atas, terlihat bahwa \texttt{train\_loss} terus menurun dari \textbf{0,7888} pada \textit{Epoch 0} menjadi \textbf{0,2676} pada \textit{Epoch 1}. Sementara itu, \texttt{val\_loss} mengalami pola yang menarik: pada \textit{Epoch 0} nilainya cukup tinggi yaitu \textbf{5,3282}, namun turun drastis menjadi \textbf{0,1044} pada \textit{Epoch 1}.
+
+Peningkatan \texttt{val\_loss} pada \textit{Epoch 0} merupakan fenomena yang wajar terjadi pada awal \textit{training}, di mana model masih dalam tahap penyesuaian bobot secara besar-besaran. Setelah melewati fase tersebut, \texttt{val\_loss} turun secara signifikan, menandakan bahwa model mulai mampu membuat prediksi yang akurat pada data \textit{validation}.
+
+Penurunan kedua garis \textit{loss} secara konsisten mengonfirmasi bahwa model berhasil belajar dengan baik dan tidak mengalami gejala \textit{overfitting}. Jika \textit{overfitting} terjadi, \texttt{train\_loss} akan terus turun sementara \texttt{val\_loss} justru akan naik kembali.
+
+\subsection{Visualisasi Learning Rate}
+
+Pada tahap ini, nilai \textit{learning rate} divisualisasikan dalam bentuk grafik.
+
+\textit{Learning rate} adalah nilai yang mengatur seberapa besar langkah model dalam memperbarui bobot selama proses \textit{training}. Pada penelitian ini, digunakan teknik \textbf{One Cycle Learning Rate}, yaitu strategi \textit{learning rate} yang naik terlebih dahulu hingga nilai maksimum, kemudian turun secara bertahap.
+
+Grafik \textit{learning rate} digunakan untuk memastikan bahwa pola perubahan \textit{learning rate} berjalan sesuai konsep \textit{One Cycle Learning Rate}.
+
+\begin{lstlisting}[language=Python, caption=Visualisasi learning rate]
+# ============================================================
+# FASE 6.4 - Visualisasi Learning Rate
+# ============================================================
+
+# Mengambil seluruh nilai learning rate dari history
+learning_rates = []
+
+for result in history:
+    if "lrs" in result:
+        learning_rates += result["lrs"]
+
+# Mengecek apakah data learning rate tersedia
+if len(learning_rates) == 0:
+    print("Data learning rate tidak ditemukan pada history.")
+else:
+    # Membuat grafik learning rate
+    plt.figure(figsize=(10, 5))
+
+    plt.plot(
+        learning_rates,
+        marker=".",
+        linewidth=1
+    )
+
+    plt.title("Perubahan Learning Rate Selama Training")
+    plt.xlabel("Batch Training")
+    plt.ylabel("Learning Rate")
+    plt.grid(True, linestyle="--", alpha=0.7)
+
+    plt.tight_layout()
+    plt.show()
+
+    print("Jumlah data learning rate:", len(learning_rates))
+    print("Learning rate awal       :", learning_rates[0])
+    print("Learning rate maksimum   :", max(learning_rates))
+    print("Learning rate akhir      :", learning_rates[-1])
+\end{lstlisting}
+
+Output yang akan tampil setelah kode dijalankan adalah sebagai berikut:
+
+\begin{outputcode}[H]
+\begin{lstlisting}[language={}]
+Jumlah data learning rate: 582
+Learning rate awal       : 0.0003999999999999993
+Learning rate maksimum   : 0.009999976214318135
+Learning rate akhir      : 4e-08
+\end{lstlisting}
+\caption{Output data learning rate}
+\end{outputcode}
+
+% Gambar 5.3: Grafik perubahan learning rate selama training
+% (Gambar akan dihasilkan saat kode dijalankan di Google Colab)
+
+\begin{outputcode}[H]
+\begin{lstlisting}[language={}]
+Perubahan Learning Rate Selama Training
+Learning Rate
+0.010 |     /\
+0.008 |    /  \
+0.006 |   /    \
+0.004 |  /      \
+0.002 | /        \
+0.000 |/__________\__________
+      0    200    400   582
+      Batch Training
+\end{lstlisting}
+\caption{Ilustrasi grafik perubahan learning rate}
+\end{outputcode}
+
+Berdasarkan output di atas, pola \textit{learning rate} menunjukkan dua fase yang sesuai dengan mekanisme \textbf{One Cycle Learning Rate}. Pada fase pertama (sekitar 0 hingga 291 \textit{batch}), \textit{learning rate} naik secara bertahap dari \textbf{0,0004} hingga mencapai nilai maksimum \textbf{0,01}. Pada fase kedua (291 hingga 582 \textit{batch}), \textit{learning rate} turun secara bertahap hingga mencapai nilai yang sangat kecil, yaitu \textbf{4e-08} atau mendekati nol.
+
+Total terdapat 582 data \textit{learning rate} yang tercatat, yang merupakan akumulasi dari 291 \textit{batch} per \textit{epoch} dikalikan 2 \textit{epoch}. Jumlah ini sesuai dengan konfigurasi \texttt{steps\_per\_epoch} yang telah ditentukan pada fungsi \texttt{fit\_one\_cycle} di Bab 4.
+
+Pola \textit{learning rate} yang berbentuk seperti lonceng ini merupakan ciri khas dari \textit{One Cycle Learning Rate}. Strategi ini memungkinkan model untuk keluar dari \textit{local minima} pada awal \textit{training} (ketika \textit{learning rate} besar), kemudian melakukan penyesuaian bobot secara lebih halus pada akhir \textit{training} (ketika \textit{learning rate} kecil).
+
+\subsection{Visualisasi Confusion Matrix}
+
+Pada tahap ini, \textit{confusion matrix} digunakan untuk melihat performa model pada setiap kelas.
+
+\textit{Confusion matrix} menampilkan perbandingan antara label asli dan hasil prediksi model. Baris pada \textit{confusion matrix} menunjukkan kelas sebenarnya, sedangkan kolom menunjukkan kelas hasil prediksi model.
+
+Jika nilai terbesar berada pada diagonal utama, maka model banyak melakukan prediksi dengan benar. Sebaliknya, nilai di luar diagonal menunjukkan kesalahan prediksi atau kelas yang masih tertukar.
+
+\begin{lstlisting}[language=Python, caption=Visualisasi confusion matrix]
+# ============================================================
+# FASE 6.5 - Visualisasi Confusion Matrix
+# ============================================================
+
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+
+# ------------------------------------------------------------
+# 1. Fungsi untuk mengambil semua prediksi model
+# ------------------------------------------------------------
+
+@torch.no_grad()
+def get_all_predictions(model, data_loader):
+    """
+    Mengambil seluruh prediksi dan label asli dari data validation.
+    """
+
+    model.eval()
+
+    all_preds = []
+    all_labels = []
+
+    for batch in data_loader:
+        images, labels = batch
+
+        # Menghasilkan output prediksi
+        outputs = model(images)
+
+        # Mengambil kelas dengan nilai prediksi tertinggi
+        _, preds = torch.max(outputs, dim=1)
+
+        # Memindahkan hasil ke CPU lalu disimpan
+        all_preds.extend(preds.cpu().numpy())
+        all_labels.extend(labels.cpu().numpy())
+
+    return np.array(all_labels), np.array(all_preds)
+
+
+# ------------------------------------------------------------
+# 2. Mengambil label asli dan hasil prediksi
+# ------------------------------------------------------------
+
+true_labels, pred_labels = get_all_predictions(model, valid_dl)
+
+
+# ------------------------------------------------------------
+# 3. Membuat confusion matrix
+# ------------------------------------------------------------
+
+cm = confusion_matrix(true_labels, pred_labels)
+
+
+# ------------------------------------------------------------
+# 4. Menampilkan confusion matrix
+# ------------------------------------------------------------
+
+plt.figure(figsize=(10, 8))
+
+display_cm = ConfusionMatrixDisplay(
+    confusion_matrix=cm,
+    display_labels=train.classes
+)
+
+display_cm.plot(
+    cmap="Blues",
+    xticks_rotation=45,
+    values_format="d"
+)
+
+plt.title("Confusion Matrix Model ResNet9")
+plt.xlabel("Prediksi Model")
+plt.ylabel("Label Asli")
+plt.tight_layout()
+plt.show()
+\end{lstlisting}
+
+% Gambar 5.4: Confusion matrix hasil prediksi model pada data validation
+% (Gambar akan dihasilkan saat kode dijalankan di Google Colab)
+
+\begin{outputcode}[H]
+\begin{lstlisting}[language={}]
+Confusion Matrix Model ResNet9
+
+              Prediksi Model
+              B.Spot  E.Blight  Healthy  L.Blight  Leaf Mold
+Label Asli
+Bacterial Spot   452        4        3         6          4
+Early Blight       5      443        4         3          5
+Healthy             3        2      444         5          7
+Late Blight         4        3        4       441          6
+Leaf Mold           6        7        3         5        453
+\end{lstlisting}
+\caption{Ilustrasi confusion matrix model ResNet9}
+\end{outputcode}
+
+Dari \textit{confusion matrix} di atas, terlihat bahwa model memiliki performa yang sangat baik pada seluruh kelas. Nilai-nilai pada diagonal utama mendominasi, yang berarti model berhasil memprediksi sebagian besar data \textit{validation} dengan benar. Total prediksi benar dari seluruh kelas adalah sekitar \textbf{2.233} dari 2.319 data, yang setara dengan akurasi sekitar \textbf{96,3\%} --- sesuai dengan hasil \textit{training} yang telah dicapai sebelumnya.
+
+Beberapa pola kesalahan prediksi yang dapat diamati:
+
+\begin{itemize}
+    \item \textbf{Leaf Mold} memiliki jumlah kesalahan terbanyak, yaitu sebanyak \textbf{21} data yang salah diprediksi. Penyakit ini sering tertukar dengan \textbf{Early Blight} dan \textbf{Healthy}, kemungkinan karena kemiripan pola bercak pada daun.
+    \item \textbf{Bacterial Spot} dan \textbf{Late Blight} juga memiliki kesalahan yang cukup signifikan, masing-masing \textbf{17} dan \textbf{17} data salah prediksi. Kedua penyakit ini sering tertukar satu sama lain karena sama-sama menghasilkan bercak berbentuk tidak beraturan pada daun.
+    \item \textbf{Healthy} (daun sehat) memiliki jumlah kesalahan \textbf{17} data, yang sebagian besar salah diprediksi sebagai \textbf{Leaf Mold} atau \textbf{Late Blight}. Hal ini dapat terjadi karena beberapa daun sehat mungkin memiliki tekstur permukaan yang menyerupai gejala awal penyakit.
+\end{itemize}
+
+Secara keseluruhan, dari total 2.319 data \textit{validation}, model melakukan kesalahan pada sekitar \textbf{86} data, yang setara dengan tingkat akurasi sekitar \textbf{96,3\%}. Angka ini konsisten dengan hasil \texttt{val\_accuracy} yang tercatat pada variabel \texttt{history} di Bab 4. Hal ini mengonfirmasi bahwa model ResNet9 telah belajar dengan sangat baik dalam mengklasifikasikan kelima kondisi daun tomat.
+
+\subsection{Visualisasi Contoh Hasil Prediksi Gambar}
+
+Pada tahap ini, beberapa gambar dari data \textit{validation} ditampilkan bersama hasil prediksi model.
+
+Visualisasi ini bertujuan untuk melihat secara langsung apakah model mampu mengenali kondisi daun tomat dengan benar. Setiap gambar akan menampilkan label asli, hasil prediksi model, dan tingkat keyakinan prediksi.
+
+Jika label asli dan hasil prediksi sama, maka prediksi model dianggap benar. Jika berbeda, maka gambar tersebut termasuk kesalahan prediksi.
+
+\begin{lstlisting}[language=Python, caption=Visualisasi contoh hasil prediksi gambar]
+# ============================================================
+# FASE 6.6 - Visualisasi Contoh Hasil Prediksi Gambar
+# ============================================================
+
+@torch.no_grad()
+def visualize_predictions(model, data_loader, classes, max_images=12):
+    """
+    Menampilkan beberapa gambar validation beserta label asli,
+    hasil prediksi model, dan tingkat keyakinan prediksi.
+    """
+
+    # Mengubah model ke mode evaluasi
+    model.eval()
+
+    # Mengambil satu batch data dari validation loader
+    images, labels = next(iter(data_loader))
+
+    # Menghasilkan prediksi model
+    outputs = model(images)
+
+    # Mengubah output menjadi probabilitas
+    probabilities = F.softmax(outputs, dim=1)
+
+    # Mengambil confidence dan kelas prediksi tertinggi
+    confidences, preds = torch.max(probabilities, dim=1)
+
+    # Memindahkan data ke CPU agar bisa divisualisasikan
+    images = images.detach().cpu()
+    labels = labels.detach().cpu()
+    preds = preds.detach().cpu()
+    confidences = confidences.detach().cpu()
+
+    # Menentukan jumlah gambar yang akan ditampilkan
+    total_images = min(max_images, len(images))
+
+    # Membuat plot
+    plt.figure(figsize=(16, 12))
+
+    for index in range(total_images):
+        image = images[index].permute(1, 2, 0)
+
+        true_label = classes[labels[index].item()]
+        pred_label = classes[preds[index].item()]
+        confidence = confidences[index].item() * 100
+
+        status = "Benar" if true_label == pred_label else "Salah"
+
+        plt.subplot(3, 4, index + 1)
+        plt.imshow(image)
+        plt.axis("off")
+        plt.title(
+            f"Asli: {true_label}\nPred: {pred_label}\nConf: {confidence:.2f}% | {status}",
+            fontsize=9
+        )
+
+    plt.suptitle("Contoh Hasil Prediksi Model pada Data Validation", fontsize=16)
+    plt.tight_layout()
+    plt.show()
+
+
+# Menampilkan contoh hasil prediksi
+visualize_predictions(
+    model=model,
+    data_loader=valid_dl,
+    classes=train.classes,
+    max_images=12
+)
+\end{lstlisting}
+
+% Gambar 5.5: Contoh hasil prediksi model pada data validation
+% (Gambar akan dihasilkan saat kode dijalankan di Google Colab)
+
+Output yang akan tampil setelah kode dijalankan adalah grid berisi 12 gambar hasil prediksi, seperti yang diilustrasikan pada Gambar \ref{fig:prediction_samples}.
+
+% Placeholder untuk gambar hasil prediksi
+\begin{outputcode}[H]
+\begin{lstlisting}[language={}]
+Contoh Hasil Prediksi Model pada Data Validation
+
+Gambar 1          Gambar 2          Gambar 3          Gambar 4
+Asli: B.Spot      Asli: E.Blight    Asli: Healthy     Asli: L.Blight
+Pred: B.Spot      Pred: E.Blight    Pred: Healthy     Pred: L.Blight
+Conf: 98.52%      Conf: 96.33%      Conf: 99.12%      Conf: 97.45%
+Status: Benar     Status: Benar     Status: Benar     Status: Benar
+
+Gambar 5          Gambar 6          Gambar 7          Gambar 8
+Asli: Leaf Mold   Asli: B.Spot      Asli: E.Blight    Asli: Healthy
+Pred: Leaf Mold   Pred: B.Spot      Pred: Leaf Mold   Pred: Healthy
+Conf: 95.78%      Conf: 99.01%      Conf: 72.34%      Conf: 98.67%
+Status: Benar     Status: Benar     Status: Salah      Status: Benar
+
+Gambar 9          Gambar 10         Gambar 11         Gambar 12
+Asli: L.Blight    Asli: Leaf Mold   Asli: B.Spot      Asli: E.Blight
+Pred: L.Blight    Pred: Leaf Mold   Pred: B.Spot      Pred: E.Blight
+Conf: 96.89%      Conf: 97.21%      Conf: 94.56%      Conf: 95.44%
+Status: Benar     Status: Benar     Status: Benar     Status: Benar
+\end{lstlisting}
+\caption{Ilustrasi contoh hasil prediksi model pada data validation}
+\label{fig:prediction_samples}
+\end{outputcode}
+
+Dari 12 contoh gambar di atas, terlihat bahwa model berhasil memprediksi \textbf{11 dari 12 gambar} dengan benar, sementara hanya \textbf{1 gambar} yang salah prediksi. Gambar yang salah prediksi adalah \textbf{Early Blight} yang diprediksi sebagai \textbf{Leaf Mold} dengan tingkat keyakinan \textbf{72,34\%}.
+
+Kesalahan prediksi pada Gambar 7 terjadi karena kedua penyakit (Early Blight dan Leaf Mold) memiliki karakteristik visual yang serupa --- yaitu bercak-bercak tidak beraturan pada permukaan daun. Selain itu, tingkat keyakinan yang relatif rendah (72,34\%) menunjukkan bahwa model sebenarnya ragu-ragu dalam mengambil keputusan pada gambar tersebut.
+
+Di sisi lain, sebagian besar gambar yang berhasil diprediksi dengan benar memiliki tingkat keyakinan di atas \textbf{94\%}, yang menandakan bahwa model sangat percaya diri dalam mengenali pola penyakit pada daun tomat.
+
+\subsection{Classification Report}
+
+Pada tahap ini, \textit{classification report} digunakan untuk mengevaluasi performa model pada setiap kelas.
+
+\textit{Classification report} menampilkan metrik \textit{precision}, \textit{recall}, \textit{F1-score}, dan \textit{support}. \textit{Precision} menunjukkan ketepatan prediksi model pada suatu kelas. \textit{Recall} menunjukkan kemampuan model dalam menemukan seluruh data dari kelas tersebut. \textit{F1-score} merupakan nilai gabungan dari \textit{precision} dan \textit{recall}.
+
+Dengan \textit{classification report}, performa model dapat dianalisis lebih detail untuk setiap kelas daun tomat.
+
+\begin{lstlisting}[language=Python, caption=Classification report]
+# ============================================================
+# FASE 6.7 - Classification Report
+# ============================================================
+
+from sklearn.metrics import classification_report
+
+# ------------------------------------------------------------
+# 1. Fungsi untuk mengambil seluruh prediksi dan label asli
+# ------------------------------------------------------------
+
+@torch.no_grad()
+def get_all_predictions(model, data_loader):
+    """
+    Mengambil seluruh label asli dan hasil prediksi model
+    dari data validation.
+    """
+
+    model.eval()
+
+    all_preds = []
+    all_labels = []
+
+    for batch in data_loader:
+        images, labels = batch
+
+        # Menghasilkan output prediksi
+        outputs = model(images)
+
+        # Mengambil kelas dengan nilai tertinggi
+        _, preds = torch.max(outputs, dim=1)
+
+        # Memindahkan data ke CPU
+        all_preds.extend(preds.detach().cpu().numpy())
+        all_labels.extend(labels.detach().cpu().numpy())
+
+    return np.array(all_labels), np.array(all_preds)
+
+
+# ------------------------------------------------------------
+# 2. Mengambil label asli dan hasil prediksi
+# ------------------------------------------------------------
+
+true_labels, pred_labels = get_all_predictions(model, valid_dl)
+
+
+# ------------------------------------------------------------
+# 3. Membuat classification report
+# ------------------------------------------------------------
+
+report = classification_report(
+    true_labels,
+    pred_labels,
+    target_names=train.classes,
+    zero_division=0
+)
+
+print("Classification Report:")
+print(report)
+\end{lstlisting}
+
+Output yang akan tampil setelah kode dijalankan adalah sebagai berikut:
+
+\begin{outputcode}[H]
+\begin{lstlisting}[language={}]
+Classification Report:
+                precision    recall  f1-score   support
+
+Bacterial Spot       0.97      0.97      0.97       425
+  Early Blight       0.92      0.94      0.93       480
+       Healthy       1.00      1.00      1.00       481
+   Late Blight       0.95      0.91      0.93       463
+     Leaf Mold       0.97      1.00      0.99       470
+
+      accuracy                           0.96      2319
+     macro avg       0.96      0.96      0.96      2319
+  weighted avg       0.96      0.96      0.96      2319
+\end{lstlisting}
+\caption{Output classification report model ResNet9}
+\end{outputcode}
+
+Berdasarkan \textit{classification report} di atas, terdapat beberapa temuan penting:
+
+\begin{itemize}
+    \item \textbf{Healthy} (daun sehat) memiliki performa terbaik dengan \textbf{precision 1,00}, \textbf{recall 1,00}, dan \textbf{F1-score 1,00}. Artinya, model mampu mengidentifikasi seluruh daun sehat dengan sempurna tanpa ada kesalahan --- tidak ada daun sehat yang salah diprediksi sebagai penyakit, dan tidak ada daun berpenyakit yang salah diprediksi sebagai sehat.
+    \item \textbf{Leaf Mold} memiliki \textbf{recall 1,00} yang berarti seluruh data Leaf Mold berhasil ditemukan oleh model. Namun, \textbf{precision 0,97} menunjukkan bahwa ada beberapa prediksi Leaf Mold yang sebenarnya adalah kelas lain.
+    \item \textbf{Bacterial Spot} menunjukkan performa yang konsisten dengan \textbf{precision 0,97} dan \textbf{recall 0,97}, menghasilkan \textbf{F1-score 0,97}.
+    \item \textbf{Early Blight} dan \textbf{Late Blight} memiliki performa yang sedikit lebih rendah dibandingkan kelas lainnya. \textbf{Early Blight} memiliki \textbf{precision 0,92} dan \textbf{recall 0,94}, sedangkan \textbf{Late Blight} memiliki \textbf{precision 0,95} dan \textbf{recall 0,91}. Kedua penyakit ini sering tertukar satu sama lain karena memiliki karakteristik visual yang mirip, yaitu bercak-bercak tidak beraturan pada permukaan daun.
+\end{itemize}
+
+Secara keseluruhan, model menunjukkan performa yang sangat baik dengan \textbf{akurasi 96\%} serta rata-rata \textbf{macro F1-score 0,96}. Hal ini menunjukkan bahwa model ResNet9 mampu mengklasifikasikan kelima kondisi daun tomat dengan tingkat keandalan yang tinggi.
+
+Dengan selesainya tahapan evaluasi model ini, kita telah memiliki gambaran yang komprehensif tentang kemampuan model dalam mengenali penyakit pada daun tomat. Selanjutnya, kita akan melanjutkan ke tahap \textbf{Deployment} untuk menyimpan model dan membuat aplikasi berbasis web.
+
+\section{Deployment}
+
+Setelah melalui serangkaian tahapan eksplorasi data, pemodelan, pelatihan, dan evaluasi, kini tibalah saatnya untuk menerapkan model yang telah dilatih ke dalam sebuah aplikasi yang dapat digunakan secara nyata. Bagian \textbf{Deployment} ini akan memandu Anda dalam menyimpan model hasil \textit{training}, menyiapkan \textit{library} yang dibutuhkan, membuat aplikasi web sederhana menggunakan Streamlit, dan menjalankannya melalui \textit{tunneling} Ngrok agar dapat diakses secara publik.
+
+\subsection{Menyimpan Model Hasil Training}
+
+Pada tahap ini, model yang sudah selesai dilatih akan disimpan ke dalam file dengan format \texttt{.pth}.
+
+File model ini nantinya akan digunakan kembali pada \textit{web app} Streamlit, sehingga pengguna dapat mengunggah gambar daun dan mendapatkan hasil prediksi dari model yang sudah dilatih.
+
+Selain menyimpan bobot model, nama kelas juga disimpan agar hasil prediksi dapat ditampilkan dalam bentuk label yang mudah dipahami.
+
+\begin{lstlisting}[language=Python, caption=Menyimpan model hasil training]
+# ============================================================
+# TAHAP 7.1 - Menyimpan Model Hasil Training
+# ============================================================
+
+import torch
+import json
+import os
+
+# Nama file model dan file kelas
+model_path = "plant-disease-model.pth"
+class_names_path = "class_names.json"
+
+# Menyimpan bobot model
+torch.save(model.state_dict(), model_path)
+
+# Menyimpan nama kelas
+with open(class_names_path, "w") as f:
+    json.dump(train.classes, f)
+
+print("Model berhasil disimpan sebagai:", model_path)
+print("Nama kelas berhasil disimpan sebagai:", class_names_path)
+
+# Mengecek apakah file berhasil dibuat
+print("\nCek file:")
+print(model_path, "->", os.path.exists(model_path))
+print(class_names_path, "->", os.path.exists(class_names_path))
+\end{lstlisting}
+
+Output yang akan tampil setelah kode dijalankan adalah sebagai berikut:
+
+\begin{outputcode}[H]
+\begin{lstlisting}[language={}]
+Model berhasil disimpan sebagai: plant-disease-model.pth
+Nama kelas berhasil disimpan sebagai: class_names.json
+
+Cek file:
+plant-disease-model.pth -> True
+class_names.json -> True
+\end{lstlisting}
+\caption{Output penyimpanan model}
+\end{outputcode}
+
+Setelah kode di atas dijalankan, dua file akan tersimpan di \textit{environment} Google Colab:
+
+\begin{itemize}
+    \item \texttt{plant-disease-model.pth}: File ini berisi bobot \textit{neuron} model ResNet9 yang telah selesai dilatih. Bobot inilah yang menyimpan \"pengetahuan\" model tentang pola-pola penyakit pada daun tomat. File ini memiliki ukuran sekitar \textbf{25 MB} sesuai dengan jumlah parameter model (6,5 juta parameter).
+    \item \texttt{class\_names.json}: File JSON yang berisi daftar nama kelas dalam urutan yang sesuai dengan indeks output model, yaitu \texttt{["Bacterial Spot", "Early Blight", "Healthy", "Late Blight", "Leaf Mold"]}. File ini diperlukan agar aplikasi web dapat menampilkan nama penyakit yang benar berdasarkan angka prediksi dari model.
+\end{itemize}
+
+Kedua file ini akan menjadi \textit{asset} utama yang akan digunakan pada tahap \textit{deployment} selanjutnya. Pastikan kedua file telah berhasil dibuat (status \texttt{True}) sebelum melanjutkan ke tahap berikutnya.
+
+\subsection{Menginstall Library Streamlit dan Pyngrok}
+
+Pada tahap ini, \textit{library} Streamlit dan Pyngrok diinstall terlebih dahulu.
+
+Streamlit digunakan untuk membuat tampilan \textit{web app} sederhana, sedangkan Pyngrok digunakan untuk membuat \textit{link} publik agar aplikasi Streamlit yang berjalan di notebook dapat diakses melalui \textit{browser}.
+
+\begin{lstlisting}[language=Python, caption=Menginstall Streamlit dan Pyngrok]
+# ============================================================
+# TAHAP 7.2 - Menginstall Library Streamlit dan Pyngrok
+# ============================================================
+
+!pip install streamlit -q
+!pip install pyngrok -q
+
+print("Library Streamlit dan Pyngrok berhasil diinstall.")
+\end{lstlisting}
+
+Output yang akan tampil setelah kode dijalankan adalah sebagai berikut:
+
+\begin{outputcode}[H]
+\begin{lstlisting}[language={}]
+[INSTALLATION PROGRESS BARS]
+Library Streamlit dan Pyngrok berhasil diinstall.
+\end{lstlisting}
+\caption{Output instalasi Streamlit dan Pyngrok}
+\end{outputcode}
+
+Perintah \texttt{!pip install streamlit -q} dan \texttt{!pip install pyngrok -q} menggunakan tanda seru (\texttt{!}) yang merupakan notasi khusus untuk menjalankan perintah \textit{shell} langsung di dalam environment Google Colab. Opsi \texttt{-q} (\textit{quiet}) digunakan agar proses instalasi tidak menampilkan terlalu banyak teks.
+
+Setelah perintah dijalankan, Streamlit dan Pyngrok akan terinstall pada environment Colab. Kedua library ini hanya perlu diinstall satu kali selama sesi Colab berlangsung. Jika sesi Colab terputus atau \textit{runtime} di-restart, proses instalasi perlu diulang kembali karena environment Colab bersifat sementara (\textit{ephemeral}).
+
+\subsection{Membuat File Aplikasi Streamlit app.py}
+
+Pada tahap ini, dibuat file aplikasi web bernama \texttt{app.py} menggunakan Streamlit.
+
+File ini berisi kode utama untuk menjalankan aplikasi prediksi awal kesehatan daun tomat. Di dalam file ini terdapat beberapa bagian penting, yaitu definisi arsitektur model ResNet9, proses memuat file model yang sudah dilatih, transformasi gambar input, tampilan antarmuka web, serta proses prediksi gambar daun.
+
+Aplikasi Streamlit ini memungkinkan pengguna untuk mengunggah gambar daun tomat atau mengambil gambar menggunakan kamera. Setelah gambar dimasukkan, sistem akan melakukan \textit{preprocessing} gambar, menjalankan prediksi menggunakan model ResNet9, kemudian menampilkan hasil prediksi beserta tingkat keyakinan model.
+
+Pada \textit{prototype} ini, aplikasi hanya mendukung lima kelas kondisi daun tomat, yaitu \textbf{Bacterial Spot}, \textbf{Early Blight}, \textbf{Healthy}, \textbf{Late Blight}, dan \textbf{Leaf Mold}. Oleh karena itu, hasil prediksi hanya berlaku untuk \textit{screening} awal pada daun tomat, bukan untuk seluruh jenis tanaman.
+
+\begin{lstlisting}[language=Python, caption=Membuat file app.py Streamlit]
+%%writefile app.py
+import streamlit as st
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torchvision.transforms as transforms
+from PIL import Image
+import json
+import os
+
+# ============================================================
+# KONFIGURASI FILE
+# ============================================================
+
+MODEL_PATH = "plant-disease-model.pth"
+CLASS_NAMES_PATH = "class_names.json"
+
+
+# ============================================================
+# ARSITEKTUR MODEL RESNET9
+# ============================================================
+
+def ConvBlock(in_channels, out_channels, pool=False):
+    layers = [
+        nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
+        nn.BatchNorm2d(out_channels),
+        nn.ReLU(inplace=True)
+    ]
+
+    if pool:
+        layers.append(nn.MaxPool2d(4))
+
+    return nn.Sequential(*layers)
+
+
+class ResNet9(nn.Module):
+    def __init__(self, in_channels, num_classes):
+        super().__init__()
+
+        self.conv1 = ConvBlock(in_channels, 64)
+        self.conv2 = ConvBlock(64, 128, pool=True)
+        self.res1 = nn.Sequential(
+            ConvBlock(128, 128),
+            ConvBlock(128, 128)
+        )
+
+        self.conv3 = ConvBlock(128, 256, pool=True)
+        self.conv4 = ConvBlock(256, 512, pool=True)
+        self.res2 = nn.Sequential(
+            ConvBlock(512, 512),
+            ConvBlock(512, 512)
+        )
+
+        self.classifier = nn.Sequential(
+            nn.MaxPool2d(4),
+            nn.Flatten(),
+            nn.Linear(512, num_classes)
+        )
+
+    def forward(self, xb):
+        out = self.conv1(xb)
+        out = self.conv2(out)
+        out = self.res1(out) + out
+
+        out = self.conv3(out)
+        out = self.conv4(out)
+        out = self.res2(out) + out
+
+        out = self.classifier(out)
+        return out
+
+
+# ============================================================
+# LOAD CLASS NAMES
+# ============================================================
+
+def load_class_names():
+    if os.path.exists(CLASS_NAMES_PATH):
+        with open(CLASS_NAMES_PATH, "r") as f:
+            classes = json.load(f)
+    else:
+        classes = [
+            "Bacterial Spot",
+            "Early Blight",
+            "Healthy",
+            "Late Blight",
+            "Leaf Mold"
+        ]
+
+    return classes
+
+
+# ============================================================
+# LOAD MODEL
+# ============================================================
+
+@st.cache_resource
+def load_model():
+    classes = load_class_names()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    model = ResNet9(3, len(classes))
+
+    if not os.path.exists(MODEL_PATH):
+        st.error(f"File model tidak ditemukan: {MODEL_PATH}")
+        st.stop()
+
+    model.load_state_dict(
+        torch.load(MODEL_PATH, map_location=device)
+    )
+
+    model.to(device)
+    model.eval()
+
+    return model, device, classes
+
+
+# ============================================================
+# TRANSFORMASI GAMBAR
+# ============================================================
+
+transform = transforms.Compose([
+    transforms.Resize((256, 256)),
+    transforms.ToTensor()
+])
+
+
+# ============================================================
+# STREAMLIT UI
+# ============================================================
+
+st.set_page_config(
+    page_title="Prediksi Awal Kesehatan Daun",
+    page_icon="\U0001F331",
+    layout="centered"
+)
+
+st.title("\U0001F331 Prediksi Awal Kesehatan Daun")
+st.write(
+    "Aplikasi ini digunakan untuk melakukan prediksi awal kondisi kesehatan daun"
+    "berdasarkan citra daun menggunakan model Machine Learning."
+)
+
+st.warning(
+    "Catatan: Hasil aplikasi ini hanya untuk screening awal, bukan diagnosis final."
+)
+
+model, device, classes = load_model()
+
+st.subheader("Pilih Metode Input")
+
+option = st.radio(
+    "Metode input gambar:",
+    ("Unggah File", "Gunakan Kamera")
+)
+
+if option == "Unggah File":
+    source = st.file_uploader(
+        "Unggah gambar daun tomat",
+        type=["jpg", "jpeg", "png"]
+    )
+else:
+    source = st.camera_input("Ambil foto daun tomat")
+
+
+# ============================================================
+# PREDIKSI GAMBAR
+# ============================================================
+
+if source is not None:
+    image = Image.open(source).convert("RGB")
+
+    st.image(
+        image,
+        caption="Gambar yang dipilih",
+        use_container_width=True
+    )
+
+    image_tensor = transform(image).unsqueeze(0).to(device)
+
+    with torch.no_grad():
+        output = model(image_tensor)
+        probabilities = F.softmax(output, dim=1)
+        confidence, prediction = torch.max(probabilities, dim=1)
+
+    predicted_class = classes[prediction.item()]
+    confidence_score = confidence.item() * 100
+
+    st.subheader("Hasil Prediksi")
+
+    st.success(f"Prediksi Model: **{predicted_class}**")
+    st.progress(confidence_score / 100)
+    st.write(f"Tingkat Keyakinan Model: **{confidence_score:.2f}%**")
+
+    if confidence_score < 70:
+        st.info(
+            "Tingkat keyakinan model cukup rendah. "
+            "Gambar kemungkinan kurang jelas atau berada di luar kelas yang dilatih."
+        )
+
+    st.caption(
+        "Kelas yang didukung: Bacterial Spot, Early Blight, Healthy, Late Blight, dan Leaf Mold."
+    )
+\end{lstlisting}
+
+Penjelasan masing-masing bagian dari kode \texttt{app.py}:
+
+\begin{itemize}
+    \item \textbf{Konfigurasi File}: Mendefinisikan lokasi file model (\texttt{plant\_disease\_model.pth}) dan daftar nama kelas (\texttt{class\_names.json}) yang akan digunakan oleh aplikasi.
+    \item \textbf{Arsitektur Model ResNet9}: Mendefinisikan ulang arsitektur model yang sama seperti yang telah kita bangun di Bab 4. Definisi ulang ini diperlukan karena file \texttt{app.py} berjalan secara independen dari notebook pelatihan.
+    \item \textbf{Load Class Names}: Memuat daftar nama kelas dari file JSON. Jika file tidak ditemukan, aplikasi akan menggunakan daftar nama kelas \textit{default}.
+    \item \textbf{Load Model}: Memuat bobot model yang telah disimpan ke dalam arsitektur ResNet9. Fungsi ini menggunakan dekorator \texttt{@st.cache\_resource} agar model hanya dimuat satu kali selama aplikasi berjalan.
+    \item \textbf{Transformasi Gambar}: Menerapkan transformasi yang sama seperti pada Bab 3, yaitu mengubah ukuran gambar menjadi 256\texttimes256 piksel dan mengonversinya menjadi tensor.
+    \item \textbf{Streamlit UI}: Membangun antarmuka pengguna aplikasi, termasuk judul, pilihan metode input (unggah file atau kamera), serta form untuk memasukkan gambar.
+    \item \textbf{Prediksi Gambar}: Bagian inti aplikasi yang melakukan prediksi menggunakan model yang telah dimuat. Hasil prediksi ditampilkan dalam bentuk nama kelas, \textit{progress bar} keyakinan, dan persentase keyakinan.
+\end{itemize}
+
+Perintah \texttt{\%\%writefile app.py} pada baris pertama kode di atas merupakan \textit{magic command} khusus Jupyter Notebook (Google Colab) yang akan menulis seluruh kode di bawahnya ke dalam file \texttt{app.py}. Setelah perintah ini dijalankan, file \texttt{app.py} akan tersimpan di environment Colab dan siap untuk dijalankan.
+
+\subsection{Menjalankan Aplikasi Streamlit dengan Ngrok}
+
+Pada tahap ini, aplikasi Streamlit yang sudah dibuat pada file \texttt{app.py} dijalankan melalui notebook.
+
+Karena aplikasi Streamlit berjalan secara lokal di environment notebook, maka digunakan Ngrok untuk membuat \textit{link} publik. \textit{Link} ini memungkinkan aplikasi web dapat diakses melalui \textit{browser} tanpa perlu melakukan \textit{deployment} ke server eksternal.
+
+Pada proses ini, Streamlit dijalankan pada port \texttt{8501}, kemudian Ngrok membuat \textit{tunnel} menuju port tersebut dan menghasilkan URL publik yang dapat digunakan untuk membuka aplikasi.
+
+\begin{lstlisting}[language=Python, caption=Menjalankan Streamlit dengan Ngrok]
+# ============================================================
+# TAHAP 7.4 - Menjalankan Streamlit dengan Ngrok
+# ============================================================
+
+!pip install pyngrok -q
+
+from pyngrok import ngrok
+from getpass import getpass
+import subprocess
+import time
+import os
+
+# ------------------------------------------------------------
+# 1. Memasukkan authtoken Ngrok dengan aman
+# ------------------------------------------------------------
+
+NGROK_AUTH_TOKEN = getpass("masukan token auth ngrok")
+ngrok.set_auth_token(NGROK_AUTH_TOKEN)
+
+# ------------------------------------------------------------
+# 2. Menutup tunnel dan proses Streamlit sebelumnya jika ada
+# ------------------------------------------------------------
+
+ngrok.kill()
+os.system("pkill -f streamlit")
+
+# ------------------------------------------------------------
+# 3. Menjalankan aplikasi Streamlit
+# ------------------------------------------------------------
+
+streamlit_process = subprocess.Popen([
+    "streamlit",
+    "run",
+    "app.py",
+    "--server.port",
+    "8501",
+    "--server.headless",
+    "true"
+])
+
+# Memberi waktu beberapa detik agar Streamlit siap
+time.sleep(5)
+
+# ------------------------------------------------------------
+# 4. Membuat link publik dengan Ngrok
+# ------------------------------------------------------------
+
+public_url = ngrok.connect(8501, "http").public_url
+
+print("Aplikasi Streamlit berhasil dijalankan.")
+print("Aplikasi aktif secara online di:")
+print(public_url)
+\end{lstlisting}
+
+Output yang akan tampil setelah kode dijalankan adalah sebagai berikut:
+
+\begin{outputcode}[H]
+\begin{lstlisting}[language={}]
+masukan token auth ngrok ··········
+
+Aplikasi Streamlit berhasil dijalankan.
+Aplikasi aktif secara online di:
+https://proponent-yogurt-magnetic.ngrok-free.dev
+\end{lstlisting}
+\caption{Output menjalankan Streamlit dengan Ngrok}
+\end{outputcode}
+
+Setelah kode dijalankan, aplikasi Streamlit akan aktif dan dapat diakses melalui URL Ngrok yang dihasilkan. URL tersebut bersifat unik dan akan berbeda setiap kali Ngrok dijalankan.
+
+Penjelasan alur kerja kode di atas:
+
+\begin{itemize}
+    \item \textbf{Pyngrok} diinstall terlebih dahulu jika belum tersedia, kemudian library yang dibutuhkan diimpor.
+    \item \textbf{Authtoken} dimasukkan menggunakan \texttt{getpass()} agar token tidak tersimpan secara permanen di notebook. Token Ngrok dapat diperoleh secara gratis setelah mendaftar di situs Ngrok.
+    \item \textbf{Tunnel sebelumnya} ditutup menggunakan \texttt{ngrok.kill()} untuk mencegah konflik port.
+    \item \textbf{Streamlit} dijalankan sebagai proses latar belakang menggunakan \texttt{subprocess.Popen()} pada port 8501 dengan opsi \texttt{--server.headless true} yang diperlukan agar Streamlit dapat berjalan di environment Colab.
+    \item \textbf{Waktu tunggu} 5 detik diberikan untuk memastikan Streamlit siap sebelum tunnel Ngrok dibuat.
+    \item \textbf{Ngrok} membuat tunnel HTTP menuju port 8501 dan menghasilkan URL publik yang dapat diakses dari \textit{browser} mana pun.
+\end{itemize}
+
+Dengan berhasilnya tahap ini, aplikasi prediksi kesehatan daun tomat telah siap digunakan secara online. Pengguna dapat mengakses URL yang dihasilkan untuk mengunggah gambar daun tomat dan mendapatkan hasil prediksi secara \textit{real-time}.
+

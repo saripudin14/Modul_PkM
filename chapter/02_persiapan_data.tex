@@ -1,8 +1,12 @@
 ﻿\chapter{Persiapan dan Eksplorasi Data}
 
+Pada Bab 1, kita telah memahami gambaran umum sistem, tujuan praktikum, serta berbagai \textit{tools} yang akan digunakan seperti Google Colab, PyTorch, Streamlit, dan Ngrok. Sekarang, saatnya untuk mulai bekerja dengan data.
+
 Bab ini akan memandu Anda dalam mempersiapkan seluruh kebutuhan data yang akan digunakan pada praktikum ini. Terdapat tiga tahapan utama yang akan dilalui, yaitu pengambilan data (\textit{data loading}) dari KaggleHub, persiapan \textit{environment} dengan mengimpor seluruh \textit{library} yang dibutuhkan, serta eksplorasi data awal (\textit{Exploratory Data Analysis} / EDA) untuk memahami karakteristik dataset yang akan digunakan.
 
 \section{Data Loading dengan KaggleHub}
+
+Pada Bab 1, kita telah berkenalan dengan KaggleHub sebagai salah satu \textit{library} yang akan digunakan untuk mengunduh dataset dari platform Kaggle. Sekarang, kita akan benar-benar menggunakannya.
 
 Langkah pertama yang harus dilakukan adalah mengambil dataset gambar daun tanaman dari KaggleHub. Dataset akan digunakan sebagai bahan utama untuk melatih model \textit{Machine Learning} agar mampu mengenali kondisi kesehatan tanaman berdasarkan citra daun.
 
@@ -86,6 +90,8 @@ Isi folder utama dataset:
 Dari output tersebut, kita dapat melihat bahwa dataset terdiri dari tiga folder utama. Dua di antaranya merupakan folder yang berisi data \textit{training} dan \textit{validation} yang sudah di-\textit{augmentasi}, serta satu folder \texttt{test} yang berisi data pengujian. Pada praktikum ini, kita akan menggunakan folder yang berisi data \textit{augmented} untuk melatih dan mengevaluasi model.
 
 \section{Persiapan Environment}
+
+Setelah dataset berhasil diunduh, langkah selanjutnya adalah menyiapkan \textit{environment} komputasi. Pada Bab 1, kita telah membahas bahwa praktikum ini akan menggunakan PyTorch dan Torchvision sebagai \textit{framework Deep Learning}, serta Matplotlib untuk visualisasi. Sekarang saatnya untuk mengimpor seluruh \textit{library} tersebut ke dalam sesi Google Colab.
 
 Sebelum memulai proses pengolahan data dan pemodelan, kita perlu menyiapkan \textit{environment} dengan mengimpor seluruh \textit{library} yang dibutuhkan. \textit{Library} yang akan digunakan meliputi \textit{library} untuk pengelolaan data, visualisasi, dan \textit{deep learning}.
 
@@ -229,7 +235,7 @@ Jumlah kelas dataset : 38
 \caption{Output lokasi folder dataset}
 \end{outputcode}
 
-Dari output di atas, kita dapat melihat bahwa dataset utama memiliki total 38 kelas penyakit tanaman. Namun, untuk praktikum ini kita hanya akan fokus pada 5 kelas daun tomat.
+Dari output di atas, kita dapat melihat bahwa dataset utama memiliki total 38 kelas penyakit tanaman. Jumlah ini jauh lebih banyak dari batasan yang telah ditetapkan pada Bab 1, di mana kita hanya akan berfokus pada \textbf{5 kelas kondisi daun tomat}. Oleh karena itu, pada subbab selanjutnya kita akan mengidentifikasi dan menyaring kelas-kelas tersebut dari keseluruhan dataset.
 
 \subsection{Menghitung Total Gambar dalam Dataset}
 
@@ -267,6 +273,8 @@ Total gambar dalam dataset: 175767
 \end{outputcode}
 
 Kode di atas akan menelusuri seluruh folder dan subfolder dalam dataset, kemudian menghitung jumlah file gambar dengan ekstensi \texttt{.jpg}, \texttt{.jpeg}, dan \texttt{.png}. Hasilnya menampilkan total seluruh gambar yang tersedia di dalam dataset, yaitu sebanyak \textbf{175.767} gambar.
+
+Angka ini masih mencakup seluruh kelas dari 14 jenis tanaman yang berbeda. Pada subbab selanjutnya, kita akan menyaringnya dan memfokuskan hanya pada 5 kelas daun tomat yang telah ditetapkan sebagai batasan sistem pada Bab 1.
 
 \subsection{Menampilkan Contoh Gambar Dataset}
 
@@ -319,6 +327,8 @@ Dari output di atas, kita dapat melihat bahwa setiap gambar dalam dataset memili
 \begin{tcolorbox}[title=Catatan Penting, colback=blue!5!white, colframe=blue!70!black]
 Pada lingkungan Google Colab, perintah \texttt{plt.show()} akan menampilkan gambar langsung di bawah sel kode. Jika Anda menjalankan kode di \textit{terminal} biasa, pastikan \textit{backend} matplotlib telah dikonfigurasi dengan benar untuk menampilkan grafik.
 \end{tcolorbox}
+
+Informasi ukuran gambar ini akan menjadi acuan penting pada \textbf{Bab 3} saat kita menentukan transformasi gambar. Ukuran 256\texttimes256 piksel akan kita pertahankan sebagai dimensi input untuk model, sehingga seluruh gambar akan di-\textit{resize} ke ukuran yang sama sebelum dimasukkan ke dalam proses pelatihan.
 
 \subsection{Identifikasi Kelas Dataset dan Memisahkan Kelas Penyakit dan Kelas Sehat}
 
@@ -479,9 +489,13 @@ Selain output teks di atas, kode tersebut juga akan menampilkan tiga buah tabel 
 \end{tabular}
 \end{table}
 
+Dari tiga tabel di atas, kita dapat melihat bahwa dataset tidak hanya mencakup satu jenis tanaman, melainkan 14 jenis tanaman dengan puluhan kelas penyakit dan kesehatan. Namun, sesuai dengan batasan sistem pada Bab 1, kita hanya akan mengambil data pada tanaman tomat (\texttt{Tomato}) dengan 5 kondisi spesifik. Mari kita lanjut ke subbab berikutnya untuk melakukan seleksi dan menghitung jumlah data target.
+
 \subsection{Identifikasi Data yang Akan Digunakan}
 
-Melihat luasnya cakupan 14 jenis tanaman dan puluhan penyakit dari tabel di atas, melatih AI untuk mengenali semuanya sekaligus tentu membutuhkan komputasi yang sangat besar. Oleh karena itu, agar *prototype* sistem lebih fokus dan efisien, ruang lingkup data akan dibatasi khusus pada komoditas daun Tomat. Secara spesifik, kita hanya akan mengekstrak lima kondisi target: \textbf{Bacterial Spot}, \textbf{Early Blight}, \textbf{Late Blight}, \textbf{Leaf Mold}, dan \textbf{Healthy}. Mari kita saring *dataset* ini dan hitung berapa banyak "amunisi" gambar yang siap digunakan untuk melatih model!
+Melihat luasnya cakupan 14 jenis tanaman dan puluhan penyakit dari tabel di atas, melatih AI untuk mengenali semuanya sekaligus tentu membutuhkan komputasi yang sangat besar. Di sinilah batasan sistem yang telah ditetapkan pada Bab 1 menjadi relevan. Seperti yang telah dijelaskan sebelumnya, prototype ini dibatasi pada \textbf{5 kelas kondisi daun tomat} saja.
+
+Oleh karena itu, agar prototype sistem lebih fokus dan efisien, ruang lingkup data akan dipersempit khusus pada komoditas daun Tomat --- sesuai dengan batasan yang telah direncanakan sejak awal. Secara spesifik, kita hanya akan mengekstrak lima kondisi target: \textbf{Bacterial Spot}, \textbf{Early Blight}, \textbf{Late Blight}, \textbf{Leaf Mold}, dan \textbf{Healthy}. Mari kita saring dataset ini dan hitung berapa banyak gambar yang siap digunakan untuk melatih model!
 
 \begin{lstlisting}[language=Python, caption=Menentukan dan menghitung data target]
 
@@ -670,6 +684,8 @@ Output grafik dari kode di atas adalah sebagai berikut:
 
 Dari grafik di atas, terlihat bahwa kelima kelas target memiliki distribusi jumlah gambar yang relatif seimbang, yakni berkisar antara 1.700 hingga 1.900 gambar untuk data \textit{training}, dan 420 hingga 480 gambar untuk data \textit{validation}. Keseimbangan proporsi ini merupakan indikator yang sangat baik. Dengan jumlah sampel yang setara, model AI dapat mempelajari karakteristik setiap kelas secara merata dan mencegah terjadinya bias prediksi ke salah satu kondisi daun tertentu.
 
+Setelah melihat perbandingan data \textit{training} dan \textit{validation}, selanjutnya kita akan melihat total akumulasi gambar pada setiap kelas untuk memastikan tidak ada kelas yang kekurangan sampel secara keseluruhan.
+
 \subsection{Visualisasi Total Gambar per Kelas}
 
 Selain membandingkan porsi data \textit{training} dan \textit{validation}, kita juga perlu melihat akumulasi total gambar secara keseluruhan pada setiap kelas. Langkah ini merupakan penegasan akhir untuk memastikan bahwa tidak ada kelas yang mendominasi ataupun kekurangan sampel sebelum kita melangkah ke tahapan prapemrosesan dan pelatihan model.
@@ -708,7 +724,9 @@ Output grafik total gambar adalah sebagai berikut:
     \caption{Visualisasi Total Gambar pada Setiap Kelas Target}
 \end{figure}
 
-Berdasarkan grafik di atas, kelima kelas target secara konsisten memiliki akumulasi total antara 2.100 hingga 2.400 gambar. Angka yang proporsional ini memastikan bahwa \textit{dataset} kita sudah sepenuhnya ideal dan siap untuk diproses lebih lanjut ke tahap pemodelan.
+Berdasarkan grafik di atas, kelima kelas target secara konsisten memiliki akumulasi total antara 2.100 hingga 2.400 gambar. Angka yang proporsional ini memastikan bahwa dataset kita sudah sepenuhnya ideal dan siap untuk diproses lebih lanjut ke tahap pemodelan.
+
+Sebagai langkah terakhir dari rangkaian EDA, mari kita hitung angka final keseluruhan data \textit{training} dan \textit{validation} yang akan menjadi bahan baku pelatihan model.
 
 \subsection{Ringkasan Jumlah Data Training dan Validation}
 
@@ -741,3 +759,7 @@ Total gambar yang digunakan    : 11600
 \end{lstlisting}
 \caption{Output ringkasan akhir data}
 \end{outputcode}
+
+Setelah melalui seluruh rangkaian EDA, kita kini memiliki pemahaman yang jelas tentang dataset yang akan digunakan. Dari total 38 kelas dan 175.767 gambar dalam dataset awal, kita telah mempersempit fokus pada \textbf{5 kelas kondisi daun tomat} dengan total \textbf{11.600 gambar} yang terdiri dari 9.281 data \textit{training} dan 2.319 data \textit{validation}. Distribusi data yang relatif seimbang antar kelas juga telah terkonfirmasi melalui visualisasi, sehingga dataset siap untuk diproses ke tahap berikutnya.
+
+Pada \textbf{Bab 3}, kita akan menyiapkan data ini agar benar-benar siap untuk dimasukkan ke dalam model. Tahapan tersebut meliputi pembuatan subset dataset khusus 5 kelas, penerapan transformasi gambar, pembuatan \texttt{ImageFolder} dan \texttt{DataLoader}, serta verifikasi visual bahwa data telah termuat dengan benar.

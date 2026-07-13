@@ -45,17 +45,21 @@ Untuk memastikan fokus pembelajaran tetap terarah, sistem yang akan dibangun mem
     \item Model yang dilatih belum dilengkapi dengan kelas penolakan (seperti kelas `Unknown` atau `Non Leaf`), sehingga input gambar diasumsikan selalu berupa daun tomat.
 \end{itemize}
 
+Kelima kelas batasan di atas akan menjadi acuan utama dalam proses seleksi data pada \textbf{Bab 2}. Meskipun dataset awal memiliki puluhan kelas dari berbagai jenis tanaman, kita akan menyaringnya hanya untuk mengambil data yang sesuai dengan lima kondisi daun tomat tersebut. Dengan demikian, batasan ini bukan sekadar teori --- melainkan akan langsung diimplementasikan pada tahap eksplorasi dan persiapan data.
+
 \section{Persiapan Lingkungan Praktikum}
 Pada praktikum ini, spesifikasi komputer lokal yang tinggi tidak diwajibkan karena seluruh proses komputasi, termasuk pelatihan model yang membutuhkan GPU, akan dilakukan di \textit{cloud}. Berikut adalah \textit{tools} dan lingkungan yang perlu dipersiapkan:
 
 Berikut adalah rincian masing-masing teknologi yang menjadi tulang punggung praktikum ini:
 
 \begin{itemize}
-    \item \textbf{Google Colab}: Lingkungan Jupyter Notebook gratis berbasis cloud dari Google yang menyediakan akses ke GPU. Digunakan untuk mengeksekusi kode Python, melatih model, dan menjalankan *server* aplikasi.
-    \item \textbf{KaggleHub}: Library untuk mengunduh dataset secara langsung dari Kaggle ke environment Google Colab.
-    \item \textbf{PyTorch dan Torchvision}: Framework Deep Learning yang akan digunakan untuk mengelola dataset dan membangun arsitektur jaringan saraf tiruan (ResNet9).
-    \item \textbf{Streamlit}: Framework open-source berbasis Python untuk membuat antarmuka web interaktif khusus Machine Learning.
-    \item \textbf{Ngrok}: Layanan \textit{tunneling} yang memungkinkan aplikasi Streamlit yang berjalan di \textit{localhost} Google Colab dapat diakses melalui internet menggunakan tautan publik.
+    \item \textbf{Google Colab}: Lingkungan Jupyter Notebook gratis berbasis cloud dari Google yang menyediakan akses ke GPU. Digunakan untuk mengeksekusi kode Python, melatih model, dan menjalankan *server* aplikasi. Seluruh kode pada bab-bab selanjutnya akan dijalankan di platform ini.
+    \item \textbf{KaggleHub}: Library untuk mengunduh dataset secara langsung dari Kaggle ke environment Google Colab. Akan digunakan pertama kali pada \textbf{Bab 2} saat proses pengambilan data.
+    \item \textbf{PyTorch dan Torchvision}: Framework Deep Learning yang akan digunakan untuk mengelola dataset dan membangun arsitektur jaringan saraf tiruan (ResNet9). Library ini akan diimpor pada \textbf{Bab 2} dan menjadi fondasi utama pemodelan di \textbf{Bab 4}.
+    \item \textbf{Streamlit}: Framework open-source berbasis Python untuk membuat antarmuka web interaktif khusus Machine Learning. Akan digunakan pada tahap \textit{deployment} setelah model selesai dilatih.
+    \item \textbf{Ngrok}: Layanan \textit{tunneling} yang memungkinkan aplikasi Streamlit yang berjalan di \textit{localhost} Google Colab dapat diakses melalui internet menggunakan tautan publik. Juga akan digunakan bersamaan dengan Streamlit pada tahap \textit{deployment}.
 \end{itemize}
 
-Pastikan Anda telah memiliki akun Google untuk menggunakan Google Colab. Pada bab selanjutnya, kita akan mulai mempersiapkan *environment* praktikum.
+Pastikan Anda telah memiliki akun Google untuk menggunakan Google Colab.
+
+Setelah seluruh gambaran dan persiapan lingkungan komputasi telah dipahami, langkah selanjutnya adalah benar-benar mulai bekerja dengan data. Pada \textbf{Bab 2}, kita akan memulai proses pengambilan dataset dari KaggleHub, menyiapkan seluruh \textit{library} yang dibutuhkan dalam \textit{environment} Google Colab, serta melakukan eksplorasi data awal (\textit{Exploratory Data Analysis} / EDA) untuk mengenali karakteristik data yang akan menjadi bahan baku pelatihan model.
